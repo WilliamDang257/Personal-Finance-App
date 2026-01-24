@@ -1,0 +1,29 @@
+{
+  "transaction": {
+    "expense": [
+      "Daily fund",
+      "Love fund",
+      "Career development",
+      "Health",
+      "Traveling",
+      "Family Support",
+      "Shopping",
+      "Other"
+    ],
+    "income": [
+      "Salary",
+      "Freelance",
+      "Other"
+    ]
+  },
+  "asset": [
+    "Stock",
+    "Bond",
+    "Fund certificate",
+    "Gold",
+    "Crypto",
+    "Business",
+    "Cash",
+    "Bank Deposit"
+  ]
+}
