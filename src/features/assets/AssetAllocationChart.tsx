@@ -14,8 +14,8 @@ export function AssetAllocationChart({ mode = 'summary', activeTab, includeLiabi
     const { assets, settings } = useStore();
 
     const data = useMemo(() => {
-        const activeProfile = settings.activeProfile;
-        const profileAssets = assets.filter(a => a.profile === activeProfile);
+        const activeSpace = settings.activeSpace;
+        const profileAssets = assets.filter(a => a.spaceId === activeSpace);
 
         // Helper to get bucket with fallback for legacy data
         const getAssetBucket = (asset: any): string => {
@@ -62,7 +62,7 @@ export function AssetAllocationChart({ mode = 'summary', activeTab, includeLiabi
             .map(([name, value]) => ({ name, value }))
             .filter(item => item.value > 0)
             .sort((a, b) => b.value - a.value);
-    }, [assets, settings.activeProfile, mode, activeTab, includeLiabilities]);
+    }, [assets, settings.activeSpace, mode, activeTab, includeLiabilities]);
 
     const totalValue = useMemo(() => {
         return data.reduce((acc, curr) => acc + curr.value, 0);

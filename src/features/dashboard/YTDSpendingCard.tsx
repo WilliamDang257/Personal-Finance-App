@@ -6,20 +6,21 @@ import { CalendarRange } from 'lucide-react';
 export function YTDSpendingCard() {
     const { transactions, settings } = useStore();
 
-    const ytdSpending = useMemo(() => {
+    const totalSpent = useMemo(() => {
         const now = new Date();
         const currentYear = now.getFullYear();
-        const activeProfile = settings.activeProfile;
+        const activeSpace = settings.activeSpace;
 
-        return transactions
-            .filter(t => {
-                const d = new Date(t.date);
-                return d.getFullYear() === currentYear &&
-                    t.type === 'expense' &&
-                    t.profile === activeProfile;
-            })
-            .reduce((acc, curr) => acc + curr.amount, 0);
-    }, [transactions, settings.activeProfile]);
+        return transactions.reduce((acc, t) => {
+            const d = new Date(t.date);
+            if (t.type === 'expense' &&
+                d.getFullYear() === currentYear &&
+                t.spaceId === activeSpace) {
+                return acc + t.amount;
+            }
+            return acc;
+        }, 0);
+    }, [transactions, settings.activeSpace]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -38,7 +39,7 @@ export function YTDSpendingCard() {
             <div>
                 <p className="text-sm font-medium text-muted-foreground">YTD Spending</p>
                 <h3 className="mt-2 text-3xl font-bold tracking-tight text-red-500">
-                    {formatter.format(ytdSpending)}
+                    {formatter.format(totalSpent)}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
                     Total expenses in {new Date().getFullYear()}

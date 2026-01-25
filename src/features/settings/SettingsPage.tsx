@@ -1,11 +1,11 @@
 import { generateDemoData } from '../../data/demoData';
 import { useStore } from '../../hooks/useStore';
-import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database } from 'lucide-react';
+import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart } from 'lucide-react';
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 
 export function SettingsPage() {
-    const { settings, updateSettings, transactions, assets, budgets, addTransaction, addAsset, addBudget, loadDemoData } = useStore();
+    const { settings, updateSettings, transactions, assets, budgets, addTransaction, addAsset, importData, addSpace, updateSpace, removeSpace } = useStore();
     const [importStatus, setImportStatus] = useState<string>('');
     const [excelImportStatus, setExcelImportStatus] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -15,7 +15,7 @@ export function SettingsPage() {
         updateSettings({ currency: e.target.value });
     };
 
-    const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
+    const handleThemeChange = (theme: 'light' | 'dark' | 'system' | 'pink' | 'red') => {
         updateSettings({ theme });
     };
 
@@ -49,7 +49,7 @@ export function SettingsPage() {
             Category: t.category,
             Amount: t.amount,
             Description: t.description,
-            Profile: t.profile
+            SpaceId: t.spaceId
         }));
         const transactionsSheet = XLSX.utils.json_to_sheet(transactionsData);
         XLSX.utils.book_append_sheet(workbook, transactionsSheet, 'Transactions');
@@ -62,7 +62,7 @@ export function SettingsPage() {
             Quantity: a.quantity || '',
             'Price Per Unit': a.pricePerUnit || '',
             Bucket: a.bucket,
-            Profile: a.profile,
+            SpaceId: a.spaceId,
             'Last Updated': a.lastUpdated
         }));
         const assetsSheet = XLSX.utils.json_to_sheet(assetsData);
@@ -73,7 +73,7 @@ export function SettingsPage() {
             Category: b.category,
             Amount: b.amount,
             Period: b.period,
-            Profile: b.profile
+            SpaceId: b.spaceId
         }));
         const budgetsSheet = XLSX.utils.json_to_sheet(budgetsData);
         XLSX.utils.book_append_sheet(workbook, budgetsSheet, 'Budgets');
@@ -91,25 +91,27 @@ export function SettingsPage() {
         reader.onload = (event) => {
             try {
                 const json = JSON.parse(event.target?.result as string);
-                if (json.version !== '1.0') {
-                    setImportStatus('Warning: Unknown version');
+
+                // Basic validation
+                if (!json.transactions || !Array.isArray(json.transactions)) {
+                    throw new Error('Invalid backup file format');
                 }
 
-                if (Array.isArray(json.transactions)) {
-                    json.transactions.forEach((t: any) => addTransaction(t));
-                }
-                if (Array.isArray(json.assets)) {
-                    json.assets.forEach((a: any) => addAsset(a));
-                }
-                if (Array.isArray(json.budgets)) {
-                    json.budgets.forEach((b: any) => addBudget(b));
-                }
-                if (json.settings) {
-                    updateSettings(json.settings);
-                }
+                if (window.confirm('Warning: This will REPLACE all your current data with the backup. This action cannot be undone. Are you sure?')) {
+                    importData({
+                        transactions: json.transactions || [],
+                        assets: json.assets || [],
+                        budgets: json.budgets || [],
+                        monthlySummaries: json.monthlySummaries || [],
+                        settings: json.settings || settings // fallback to current settings if missing
+                    });
 
-                setImportStatus('Import successful!');
-                setTimeout(() => setImportStatus(''), 3000);
+                    setImportStatus('Restore successful!');
+                    setTimeout(() => setImportStatus(''), 3000);
+                } else {
+                    setImportStatus('Import cancelled.');
+                    setTimeout(() => setImportStatus(''), 3000);
+                }
             } catch (err) {
                 console.error(err);
                 setImportStatus('Error parsing file.');
@@ -148,7 +150,7 @@ export function SettingsPage() {
                                 category: row['Category'] || 'Income',
                                 description: row['Description'] || row['Note'] || '',
                                 type: 'income',
-                                profile: 'personal'
+                                spaceId: 'personal'
                             });
                             importedCount.transactions++;
                         }
@@ -169,7 +171,7 @@ export function SettingsPage() {
                                 category: row['Category'] || 'Expense',
                                 description: row['Description'] || row['Note'] || '',
                                 type: 'expense',
-                                profile: 'personal'
+                                spaceId: 'personal'
                             });
                             importedCount.transactions++;
                         }
@@ -191,7 +193,7 @@ export function SettingsPage() {
                                 value: parseFloat(row['Value']) || 0,
                                 quantity: row['Quantity'] ? parseFloat(row['Quantity']) : undefined,
                                 pricePerUnit: row['Price Per Unit'] ? parseFloat(row['Price Per Unit']) : undefined,
-                                profile: 'personal',
+                                spaceId: 'personal', // Default to 'personal' ID for now, or activeSpace?
                                 lastUpdated: new Date().toISOString(),
                                 bucket: mapAssetBucket(type)
                             });
@@ -262,6 +264,14 @@ export function SettingsPage() {
                 <p className="text-muted-foreground mt-2">Manage your preferences and data.</p>
             </div>
 
+            <SpaceManagement
+                settings={settings}
+                addSpace={addSpace}
+                updateSpace={updateSpace}
+                removeSpace={removeSpace}
+                activeSpaceId={settings.activeSpace}
+            />
+
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-6">
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
@@ -288,6 +298,20 @@ export function SettingsPage() {
                             </div>
 
                             <div className="space-y-2">
+                                <label className="text-sm font-medium">Language</label>
+                                <select
+                                    value={settings.language || 'en'}
+                                    onChange={(e) => updateSettings({ language: e.target.value as 'en' | 'vi' | 'ko' })}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                >
+                                    <option value="en">English</option>
+                                    <option value="vi">Tiếng Việt</option>
+                                    <option value="ko">한국어</option>
+                                </select>
+                                <p className="text-xs text-muted-foreground">Select your preferred language.</p>
+                            </div>
+
+                            <div className="space-y-2">
                                 <label className="text-sm font-medium block">Theme</label>
                                 <div className="flex gap-2 p-1 bg-muted rounded-lg inline-flex">
                                     <button
@@ -310,6 +334,23 @@ export function SettingsPage() {
                                         title="Dark Mode"
                                     >
                                         <Moon className="h-4 w-4" />
+                                    </button>
+                                    <div className="w-[1px] h-4 bg-border mx-1 self-center" />
+                                    <button
+                                        onClick={() => handleThemeChange('pink')}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${settings.theme === 'pink' ? 'bg-pink-100 text-pink-600 shadow-sm border border-pink-200' : 'text-muted-foreground hover:text-pink-500 hover:bg-pink-50'}`}
+                                        title="Girlfriend Mode"
+                                    >
+                                        <Heart className={`h-4 w-4 ${settings.theme === 'pink' ? 'fill-current' : ''}`} />
+                                        <span className="text-xs font-medium">Pink</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleThemeChange('red')}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${settings.theme === 'red' ? 'bg-red-100 text-red-600 shadow-sm border border-red-200' : 'text-muted-foreground hover:text-red-500 hover:bg-red-50'}`}
+                                        title="Red Theme"
+                                    >
+                                        <div className="h-3 w-3 rounded-full bg-red-500" />
+                                        <span className="text-xs font-medium">Red</span>
                                     </button>
                                 </div>
                             </div>
@@ -352,6 +393,86 @@ export function SettingsPage() {
                 </div>
             </div>
 
+            <div className="space-y-6">
+                <div className="rounded-xl border bg-card p-6 shadow-sm">
+                    <h3 className="font-semibold mb-4 flex items-center gap-2">
+                        <Save className="h-4 w-4" />
+                        AI Assistant
+                    </h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <label className="text-sm font-medium">Enable AI Assistant</label>
+                                <p className="text-xs text-muted-foreground">Turn on the AI-powered financial chatbot.</p>
+                            </div>
+                            <button
+                                role="switch"
+                                aria-checked={settings.chat?.enabled ?? false}
+                                onClick={() => updateSettings({
+                                    chat: {
+                                        ...settings.chat,
+                                        enabled: !(settings.chat?.enabled ?? false),
+                                        provider: 'gemini',
+                                        enableProactive: settings.chat?.enableProactive ?? false
+                                    }
+                                })}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${(settings.chat?.enabled ?? false) ? 'bg-primary' : 'bg-input/20 border-2 border-input'
+                                    }`}
+                            >
+                                <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform shadow-sm ${(settings.chat?.enabled ?? false) ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
+                                />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Gemini API Key</label>
+                            <input
+                                type="password"
+                                value={settings.chat?.apiKey || ''}
+                                onChange={(e) => {
+                                    let cleanKey = e.target.value.trim();
+                                    // Try to extract key if user pasted a curl command or header
+                                    const match = cleanKey.match(/AIza[0-9A-Za-z-_]{35}/);
+                                    if (match) {
+                                        cleanKey = match[0];
+                                    }
+
+                                    updateSettings({
+                                        chat: {
+                                            ...settings.chat,
+                                            enabled: settings.chat?.enabled ?? false,
+                                            provider: 'gemini',
+                                            apiKey: cleanKey,
+                                            enableProactive: settings.chat?.enableProactive ?? false
+                                        }
+                                    });
+                                }}
+                                placeholder="Enter your Gemini API key..."
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Get a free API key at:{' '}
+                                <a
+                                    href="https://makersuite.google.com/app/apikey"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline"
+                                >
+                                    Google AI Studio
+                                </a>
+                            </p>
+                        </div>
+
+                        <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                            <p className="font-medium mb-1">Privacy Notice:</p>
+                            <p>The AI assistant analyzes your financial data to provide insights. Your API key is stored locally and only minimal context is sent to Google's Gemini API.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <CategoryManagement settings={settings} updateSettings={updateSettings} />
 
             <div className="space-y-6">
@@ -370,7 +491,7 @@ export function SettingsPage() {
                             <button
                                 onClick={() => {
                                     if (window.confirm('Are you sure? This will replace all your current data with demo data.')) {
-                                        loadDemoData(generateDemoData());
+                                        importData(generateDemoData());
                                         alert('Demo data loaded!');
                                     }
                                 }}
@@ -573,6 +694,108 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SpaceManagement({ settings, addSpace, updateSpace, removeSpace, activeSpaceId }: { settings: any, addSpace: any, updateSpace: any, removeSpace: any, activeSpaceId: string }) {
+    const [newSpaceName, setNewSpaceName] = useState('');
+    const [editingSpace, setEditingSpace] = useState<{ id: string, name: string } | null>(null);
+
+    const handleAddSpace = () => {
+        if (!newSpaceName.trim()) return;
+        addSpace(newSpaceName.trim());
+        setNewSpaceName('');
+    };
+
+    const handleUpdateSpace = () => {
+        if (!editingSpace || !editingSpace.name.trim()) return;
+        updateSpace(editingSpace.id, editingSpace.name.trim());
+        setEditingSpace(null);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="rounded-xl border bg-card p-6 shadow-sm">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Database className="h-4 w-4" />
+                    Space Management
+                </h3>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Your Spaces</label>
+                        <div className="flex flex-col gap-2">
+                            {settings.spaces?.map((space: any) => (
+                                <div key={space.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50 border group">
+                                    {editingSpace?.id === space.id ? (
+                                        <div className="flex items-center gap-2 w-full">
+                                            <input
+                                                type="text"
+                                                value={editingSpace!.name}
+                                                onChange={(e) => setEditingSpace({ id: space.id, name: e.target.value })}
+                                                className="flex-1 px-2 py-1 text-sm rounded-md border bg-background"
+                                                autoFocus
+                                            />
+                                            <button onClick={handleUpdateSpace} className="p-1 px-2 text-xs bg-primary text-primary-foreground rounded">Save</button>
+                                            <button onClick={() => setEditingSpace(null)} className="p-1 px-2 text-xs bg-muted text-muted-foreground rounded">Cancel</button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-2 h-2 rounded-full ${space.id === activeSpaceId ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                <span className="font-medium text-sm">{space.name}</span>
+                                                {space.id === activeSpaceId && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>}
+                                            </div>
+                                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => setEditingSpace(space)}
+                                                    className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-background"
+                                                    title="Rename"
+                                                >
+                                                    <span className="sr-only">Rename</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                                </button>
+                                                {settings.spaces.length > 1 && (
+                                                    <button
+                                                        onClick={() => {
+                                                            if (confirm(`Are you sure you want to delete "${space.name}" and ALL its data? This cannot be undone.`)) {
+                                                                removeSpace(space.id);
+                                                            }
+                                                        }}
+                                                        className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-background"
+                                                        title="Delete Space"
+                                                        disabled={settings.spaces.length <= 1}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Create new space (e.g. Travel, Business)..."
+                            value={newSpaceName}
+                            onChange={(e) => setNewSpaceName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddSpace()}
+                            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <button
+                            onClick={handleAddSpace}
+                            className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Space
+                        </button>
                     </div>
                 </div>
             </div>

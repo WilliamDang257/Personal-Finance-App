@@ -19,28 +19,26 @@ export function BudgetsPage() {
         maximumFractionDigits: 0,
     });
 
-    const budgetStats = useMemo(() => {
+    const budgetProgress = useMemo(() => {
+        const activeSpace = settings.activeSpace;
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        const activeProfile = settings.activeProfile;
 
         return budgets
-            .filter(b => b.profile === activeProfile)
+            .filter(b => b.spaceId === activeSpace)
             .map(budget => {
                 const spent = transactions
-                    .filter(t => {
-                        const d = new Date(t.date);
-                        const isSamePeriod = budget.period === 'month'
-                            ? d.getMonth() === currentMonth && d.getFullYear() === currentYear
-                            : d.getFullYear() === currentYear;
-
-                        return t.type === 'expense' &&
-                            t.profile === activeProfile &&
-                            t.category.toLowerCase() === budget.category.toLowerCase() &&
-                            isSamePeriod;
-                    })
-                    .reduce((acc, curr) => acc + curr.amount, 0);
+                    .filter(t =>
+                        t.category.toLowerCase() === budget.category.toLowerCase() &&
+                        t.type === 'expense' &&
+                        t.spaceId === activeSpace &&
+                        (budget.period === 'year'
+                            ? (new Date(t.date).getFullYear() === currentYear)
+                            : (new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+                        )
+                    )
+                    .reduce((acc, t) => acc + t.amount, 0);
 
                 const percentage = Math.min((spent / budget.amount) * 100, 100);
                 const isOverBudget = spent > budget.amount;
@@ -52,7 +50,7 @@ export function BudgetsPage() {
                     isOverBudget
                 };
             });
-    }, [budgets, transactions, settings.activeProfile]);
+    }, [budgets, transactions, settings.activeSpace]);
 
     const handleEdit = (budget: Budget) => {
         setEditingBudget(budget);
@@ -65,8 +63,8 @@ export function BudgetsPage() {
     };
 
     const totalBudget = useMemo(() => {
-        return budgetStats.reduce((acc, curr) => acc + curr.amount, 0);
-    }, [budgetStats]);
+        return budgetProgress.reduce((acc, curr) => acc + curr.amount, 0);
+    }, [budgetProgress]);
 
     const onRemoveSubItem = (budget: Budget, subItemId: string) => {
         const updatedSubItems = (budget.subItems || []).filter(i => i.id !== subItemId);
@@ -104,15 +102,15 @@ export function BudgetsPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {budgetStats.length === 0 && (
-                    <div className="col-span-full py-10 text-center text-muted-foreground bg-card rounded-xl border border-dashed">
-                        <p>No budgets set yet.</p>
+                {budgetProgress.length === 0 && (
+                    <div className="h-full flex items-center justify-center text-muted-foreground p-6 border rounded-xl bg-card col-span-full">
+                        <p>No budgets set yet. Create one to track your spending!</p>
                     </div>
                 )}
-                {budgetStats.map((item) => (
-                    <div key={item.id} className="rounded-xl border bg-card p-6 shadow-sm flex flex-col h-full">
+                {budgetProgress.length > 0 && budgetProgress.map((item) => (
+                    <div key={item.id} className="rounded-xl border bg-card p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-4">
-                            <div>
+                            <div className="flex items-center gap-3">
                                 <h3 className="font-semibold">{item.category}</h3>
                                 <p className="text-xs text-muted-foreground capitalize">{item.period}ly Limit</p>
                             </div>

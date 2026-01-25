@@ -3,13 +3,14 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useStore } from '../../hooks/useStore';
+import { ChatbotWidget } from '../../features/chatbot/ChatbotWidget';
 
 export function Layout() {
     const { settings } = useStore();
 
     useEffect(() => {
         const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
+        root.classList.remove('light', 'dark', 'pink', 'red');
         if (settings.theme === 'system') {
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             root.classList.add(systemTheme);
@@ -27,6 +28,7 @@ export function Layout() {
                     <Outlet />
                 </main>
             </div>
+            <ChatbotWidget />
         </div>
     );
 }

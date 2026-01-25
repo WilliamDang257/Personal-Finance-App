@@ -8,9 +8,9 @@ export function RecentTransactions() {
     const { transactions, settings } = useStore();
 
     // Sort by date desc and take top 5
-    const activeProfile = settings.activeProfile;
-    const recent = [...transactions]
-        .filter(t => t.profile === activeProfile)
+    const activeSpace = settings.activeSpace;
+    const recentTransactions = [...transactions]
+        .filter(t => t.spaceId === activeSpace)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
@@ -26,10 +26,10 @@ export function RecentTransactions() {
             </div>
             <div className="p-6 pt-0">
                 <div className="space-y-4">
-                    {recent.length === 0 && (
+                    {recentTransactions.length === 0 && (
                         <p className="text-center text-sm text-muted-foreground py-4">No transactions yet.</p>
                     )}
-                    {recent.map((item) => (
+                    {recentTransactions.map((item) => (
                         <div key={item.id} className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className={cn("rounded-full p-2", item.type === 'income' ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500")}>

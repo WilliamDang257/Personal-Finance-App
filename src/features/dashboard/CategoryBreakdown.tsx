@@ -8,24 +8,23 @@ export function CategoryBreakdown() {
     const { transactions, settings } = useStore();
 
     const data = useMemo(() => {
-        const activeProfile = settings.activeProfile;
-        const expenses = transactions.filter(
-            t => t.type === 'expense' && t.profile === activeProfile
+        const activeSpace = settings.activeSpace;
+
+        const expenseTransactions = transactions.filter(
+            t => t.type === 'expense' && t.spaceId === activeSpace
+            // && new Date(t.date).getMonth() === currentMonth // Optional: Limit to current month?
         );
 
-        const grouped = expenses.reduce((acc, curr) => {
-            if (!acc[curr.category]) {
-                acc[curr.category] = 0;
-            }
-            acc[curr.category] += curr.amount;
+        const byCategory = expenseTransactions.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
 
-        return Object.entries(grouped)
+        return Object.entries(byCategory)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
-            .slice(0, 6); // Top 6 categories
-    }, [transactions, settings.activeProfile]);
+            .slice(0, 5); // Top 5
+    }, [transactions, settings.activeSpace]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',

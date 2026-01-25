@@ -9,17 +9,17 @@ export function BudgetDistributionChart() {
     const { budgets, settings } = useStore();
 
     const data = useMemo(() => {
-        const activeProfile = settings.activeProfile;
+        const activeSpace = settings.activeSpace;
 
         return budgets
-            .filter(b => b.profile === activeProfile && b.amount > 0)
+            .filter(b => b.spaceId === activeSpace && b.amount > 0)
             .map(b => ({
                 name: b.category,
                 value: b.amount,
                 period: b.period
             }))
             .sort((a, b) => b.value - a.value);
-    }, [budgets, settings.activeProfile]);
+    }, [budgets, settings.activeSpace]);
 
     const totalValue = useMemo(() => {
         return data.reduce((acc, curr) => acc + curr.value, 0);

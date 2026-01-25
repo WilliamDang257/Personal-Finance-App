@@ -1,12 +1,13 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Wallet, PieChart, Target, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, PieChart, Target, Settings, DollarSign } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: Wallet, label: 'Transactions', path: '/transactions' },
-    { icon: PieChart, label: 'Assets', path: '/assets' },
+    { icon: PieChart, label: 'Equity', path: '/assets/equity' },
+    { icon: DollarSign, label: 'Liabilities', path: '/assets/liability' },
     { icon: Target, label: 'Budgets', path: '/budgets' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
@@ -15,7 +16,7 @@ export function Sidebar() {
     return (
         <aside className="hidden h-screen w-64 flex-col border-r bg-card text-card-foreground md:flex">
             <div className="flex h-14 items-center border-b px-4">
-                <span className="text-lg font-bold text-primary">FinanceFlow</span>
+                <span className="text-lg font-bold text-primary">Personal Wealth</span>
             </div>
             <nav className="flex-1 space-y-1 p-2">
                 {navItems.map((item) => (

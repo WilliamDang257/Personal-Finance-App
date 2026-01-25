@@ -1,0 +1,54 @@
+{
+    "settings": {
+        "title": "Cài đặt",
+        "subtitle": "Quản lý tùy chọn và dữ liệu của bạn.",
+        "general": "Cấu hình chung",
+        "currency": "Tiền tệ",
+        "currencyDesc": "Chọn đơn vị tiền tệ chính để hiển thị.",
+        "language": "Ngôn ngữ",
+        "languageDesc": "Chọn ngôn ngữ ưa thích của bạn.",
+        "theme": "Giao diện",
+        "budgetRules": "Quy tắc ngân sách",
+        "enforceUnique": "Áp dụng danh mục duy nhất",
+        "enforceUniqueDesc": "Ngăn tạo nhiều ngân sách cho cùng một danh mục trong một hồ sơ.",
+        "categoryManagement": "Quản lý danh mục",
+        "expenseCategories": "Danh mục chi tiêu",
+        "incomeCategories": "Danh mục thu nhập",
+        "newExpenseCategory": "Danh mục chi tiêu mới...",
+        "newIncomeCategory": "Danh mục thu nhập mới...",
+        "spaceManagement": "Quản lý không gian",
+        "yourSpaces": "Không gian của bạn",
+        "active": "Đang hoạt động",
+        "createNewSpace": "Tạo không gian mới (ví dụ: Du lịch, Kinh doanh)...",
+        "createSpace": "Tạo không gian",
+        "demoMode": "Chế độ demo",
+        "demoModeDesc": "Điền dữ liệu mẫu (Giao dịch, Tài sản, Ngân sách) để khám phá các tính năng.",
+        "demoModeWarning": "Cảnh báo: Điều này sẽ ghi đè dữ liệu hiện tại của bạn!",
+        "loadDemoData": "Tải dữ liệu demo",
+        "dataManagement": "Quản lý dữ liệu",
+        "exportJSON": "Xuất dữ liệu (JSON)",
+        "exportJSONDesc": "Tải xuống bản sao lưu của tất cả giao dịch, tài sản và cài đặt.",
+        "exportExcel": "Xuất sang Excel",
+        "exportExcelDesc": "Xuất dữ liệu sang Excel để phân tích bên ngoài (Cá nhân & Gia đình).",
+        "importJSON": "Nhập dữ liệu (JSON)",
+        "importJSONDesc": "Khôi phục từ tệp sao lưu.",
+        "importExcel": "Nhập từ Excel",
+        "importExcelDesc": "Nhập giao dịch và tài sản từ tệp Excel (các sheet Thu nhập, Chi tiêu, Tài sản).",
+        "resetAllData": "Đặt lại tất cả dữ liệu",
+        "resetWarning": "Cẩn thận: Hành động này không thể hoàn tác."
+    },
+    "dashboard": {
+        "title": "Bảng điều khiển",
+        "subtitle": "Tổng quan chiến lược về tình hình tài chính của bạn."
+    },
+    "transactions": {
+        "title": "Giao dịch"
+    },
+    "budgets": {
+        "title": "Ngân sách"
+    },
+    "assets": {
+        "equity": "Vốn chủ sở hữu",
+        "liabilities": "Nợ phải trả"
+    }
+}

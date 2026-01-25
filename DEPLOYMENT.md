@@ -74,4 +74,16 @@ If you prefer not to host it online or want to run it locally without developmen
     npx serve dist
     ```
 
+
 > **Note**: You cannot simply open `dist/index.html` in your browser due to security restrictions (CORS/Modules). You must use a local web server as shown above.
+
+## 5. Troubleshooting
+### Error: "Author identity unknown"
+If you see this error when running `git commit`, it means Git doesn't know who you are yet. Run these two commands in your terminal (replace with your info):
+
+```bash
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+```
+Then try the `git commit` command again.
+

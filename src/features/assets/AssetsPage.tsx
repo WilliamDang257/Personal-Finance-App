@@ -7,11 +7,17 @@ import type { Asset, AssetType } from '../../types';
 
 type AssetGroup = 'equity' | 'liabilities';
 
-export function AssetsPage() {
+interface AssetsPageProps {
+    mode?: 'equity' | 'liability';
+}
+
+export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
     const { assets, removeAsset, settings } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<Asset | undefined>(undefined);
-    const [activeGroup, setActiveGroup] = useState<AssetGroup>('equity');
+
+    // Derived from mode
+    const activeGroup: AssetGroup = mode === 'liability' ? 'liabilities' : 'equity';
 
     // New state for form props
     const [formMode, setFormMode] = useState<'simple' | 'default'>('default');
@@ -54,8 +60,8 @@ export function AssetsPage() {
         setEditingAsset(undefined);
     };
 
-    const activeProfile = settings.activeProfile;
-    const profileAssets = assets.filter(a => a.profile === activeProfile);
+    const activeSpace = settings.activeSpace;
+    const profileAssets = assets.filter(a => a.spaceId === activeSpace);
 
     // Classification Logic
     const classifyAsset = (asset: Asset) => {
@@ -205,13 +211,17 @@ export function AssetsPage() {
             <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Assets & Liabilities</h2>
-                        <p className="text-sm text-muted-foreground">Track your comprehensive financial status.</p>
+                        <h2 className="text-2xl font-bold tracking-tight">
+                            {mode === 'equity' ? 'Equity Assets' : 'Liabilities'}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            {mode === 'equity'
+                                ? 'Track your cash, investments, and receivables.'
+                                : 'Manage your debts, loans, and other obligations.'}
+                        </p>
                     </div>
-                    {/* Segmented Control */}
-                    <div className="flex gap-4">
-
-
+                    {/* External Link */}
+                    <div>
                         <a
                             href="https://banggia.dnse.com.vn/vn30"
                             target="_blank"
@@ -222,29 +232,9 @@ export function AssetsPage() {
                             <ExternalLink className="h-4 w-4 text-blue-600" />
                             <span className="hidden sm:inline">VN30 Board</span>
                         </a>
-
-                        <div className="flex p-1 bg-muted rounded-lg">
-                            <button
-                                onClick={() => setActiveGroup('equity')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeGroup === 'equity'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                            >
-                                Equity
-                            </button>
-                            <button
-                                onClick={() => setActiveGroup('liabilities')}
-                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeGroup === 'liabilities'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                            >
-                                Liabilities
-                            </button>
-                        </div>
                     </div>
                 </div>
+
 
                 {/* Hero Stats */}
                 <div className="grid gap-4 md:grid-cols-3">
@@ -307,15 +297,17 @@ export function AssetsPage() {
             </div>
 
 
-            {isFormOpen && (
-                <AssetForm
-                    onClose={handleClose}
-                    initialData={editingAsset}
-                    group={activeGroup}
-                    mode={formMode}
-                    fixedType={formFixedType}
-                />
-            )}
-        </div>
+            {
+                isFormOpen && (
+                    <AssetForm
+                        onClose={handleClose}
+                        initialData={editingAsset}
+                        group={activeGroup}
+                        mode={formMode}
+                        fixedType={formFixedType}
+                    />
+                )
+            }
+        </div >
     );
 }

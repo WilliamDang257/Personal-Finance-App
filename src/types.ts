@@ -1,4 +1,7 @@
-export type Profile = 'personal' | 'family';
+export interface Space {
+    id: string;
+    name: string;
+}
 
 export type TransactionType = 'income' | 'expense';
 
@@ -15,7 +18,17 @@ export interface Transaction {
     category: string;
     description: string;
     type: TransactionType;
-    profile: Profile;
+    spaceId: string;
+    note?: string;
+}
+
+export interface MonthlySummary {
+    id: string;
+    month: number; // 0-11
+    year: number;
+    rating: number; // 1-5
+    comment: string;
+    spaceId: string;
 }
 
 export type AssetType = 'cash' | 'saving' | 'stock' | 'bond' | 'crypto' | 'gold' | 'real_estate' | 'receivable' | 'payable' | 'other' | string;
@@ -27,7 +40,7 @@ export interface Asset {
     value: number;
     quantity?: number; // For stocks/crypto/gold
     pricePerUnit?: number; // Value of each unit
-    profile: Profile;
+    spaceId: string;
     bucket: 'cash' | 'investment' | 'receivable' | 'payable';
     lastUpdated: string;
 }
@@ -43,7 +56,7 @@ export interface Budget {
     category: string;
     amount: number;
     period: 'month' | 'year';
-    profile: Profile;
+    spaceId: string;
     subItems?: BudgetItem[];
 }
 
@@ -56,10 +69,32 @@ export interface FinancialForecast {
     projectedNetWorth: number;
 }
 
+export interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: string;
+    spaceId: string;
+    tokens?: {
+        prompt: number;
+        response: number;
+        total: number;
+    };
+}
+
+export interface ChatSettings {
+    enabled: boolean;
+    provider: 'gemini';
+    apiKey?: string;
+    enableProactive: boolean;
+}
+
 export interface AppSettings {
     currency: string;
-    theme: 'light' | 'dark' | 'system';
-    activeProfile: Profile;
+    language: 'en' | 'vi' | 'ko';
+    theme: 'light' | 'dark' | 'system' | 'pink' | 'red';
+    activeSpace: string;
+    spaces: Space[];
     budgetRules: {
         enforceUniqueCategory: boolean;
     };
@@ -67,4 +102,5 @@ export interface AppSettings {
         income: string[];
         expense: string[];
     };
+    chat: ChatSettings;
 }

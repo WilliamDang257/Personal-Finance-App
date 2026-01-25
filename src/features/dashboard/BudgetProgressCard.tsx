@@ -15,10 +15,10 @@ export function BudgetProgressCard() {
         const totalDays = isLeap ? 366 : 365;
         const progress = (dayOfYear / totalDays) * 100;
 
-        const activeProfile = settings.activeProfile;
+        const activeSpace = settings.activeSpace;
 
         // Get active budgets for profile
-        const activeBudgets = budgets.filter(b => b.profile === activeProfile);
+        const activeBudgets = budgets.filter(b => b.spaceId === activeSpace);
 
         const items = activeBudgets.map(budget => {
             // Calculate Annual Budget Limit
@@ -31,7 +31,7 @@ export function BudgetProgressCard() {
                     return d.getFullYear() === currentYear &&
                         t.type === 'expense' &&
                         t.category === budget.category &&
-                        t.profile === activeProfile;
+                        t.spaceId === activeSpace;
                 })
                 .reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -48,7 +48,7 @@ export function BudgetProgressCard() {
         }).sort((a, b) => b.progress - a.progress); // Sort by highest consumption first
 
         return { budgetItems: items, yearProgress: progress };
-    }, [transactions, budgets, settings.activeProfile]);
+    }, [transactions, budgets, settings.activeSpace]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',

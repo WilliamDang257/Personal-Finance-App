@@ -11,28 +11,28 @@ export function TransactionsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
     const [search, setSearch] = useState('');
-    const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
-    const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
+    const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'all'>('expense');
+    const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount'>('date-desc');
 
-    const filtered = useMemo(() => {
-        const activeProfile = settings.activeProfile;
+    const filteredTransactions = useMemo(() => {
+        const activeSpace = settings.activeSpace;
 
         return transactions
-            .filter(t => t.profile === activeProfile)
-            .filter(t => t.type === activeTab)
+            .filter(t => t.spaceId === activeSpace)
             .filter(t => {
-                const matchesSearch = t.description.toLowerCase().includes(search.toLowerCase()) ||
-                    t.category.toLowerCase().includes(search.toLowerCase());
-                return matchesSearch;
+                if (activeTab === 'all') return true;
+                return t.type === activeTab;
             })
+            .filter(t =>
+                t.description.toLowerCase().includes(search.toLowerCase()) ||
+                t.category.toLowerCase().includes(search.toLowerCase())
+            )
             .sort((a, b) => {
-                if (sortBy === 'date') {
-                    return new Date(b.date).getTime() - new Date(a.date).getTime();
-                } else {
-                    return b.amount - a.amount;
-                }
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return sortBy === 'date-desc' ? dateB - dateA : dateA - dateB;
             });
-    }, [transactions, search, activeTab, sortBy, settings.activeProfile]);
+    }, [transactions, search, activeTab, sortBy, settings.activeSpace]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -124,10 +124,11 @@ export function TransactionsPage() {
                     <Filter className="h-4 w-4 text-muted-foreground" />
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
+                        onChange={(e) => setSortBy(e.target.value as any)}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                        <option value="date">Sort by Date</option>
+                        <option value="date-desc">Newest First</option>
+                        <option value="date-asc">Oldest First</option>
                         <option value="amount">Sort by Amount</option>
                     </select>
                 </div>
@@ -157,14 +158,14 @@ export function TransactionsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {filtered.length === 0 ? (
+                            {filteredTransactions.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                                         No {activeTab === 'income' ? 'income' : 'expense'} transactions found.
                                     </td>
                                 </tr>
                             ) : (
-                                filtered.map((transaction) => (
+                                filteredTransactions.map((transaction) => (
                                     <tr key={transaction.id} className="hover:bg-muted/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             {new Date(transaction.date).toLocaleDateString()}

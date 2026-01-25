@@ -16,32 +16,40 @@ export function CashFlowChart() {
             d.setMonth(d.getMonth() + 1);
         }
 
-        // Initialize map with 0s
-        const stats = months.reduce((acc, month) => {
-            acc[month] = { name: month, income: 0, expense: 0 };
-            return acc;
-        }, {} as Record<string, { name: string; income: number; expense: number }>);
+        const activeSpace = settings.activeSpace;
+        const result: Record<string, { income: number; expense: number }> = {};
 
-        // Aggregate transactions
-        const activeProfile = settings.activeProfile;
+        // Initialize last 6 months
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = d.toLocaleString('default', { month: 'short' });
+            result[key] = { income: 0, expense: 0 };
+        }
+
         transactions.forEach(t => {
-            if (t.profile !== activeProfile) return;
+            if (t.spaceId !== activeSpace) return;
 
-            const date = new Date(t.date);
-            if (date < startDate) return; // Ignore old data
+            const d = new Date(t.date);
+            // Check if within last 6 months (approx)
+            const now = new Date();
+            const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
 
-            const monthName = date.toLocaleString('default', { month: 'short' });
-            if (stats[monthName]) {
-                if (t.type === 'income') {
-                    stats[monthName].income += t.amount;
-                } else {
-                    stats[monthName].expense += t.amount;
+            if (diffMonths >= 0 && diffMonths <= 5) {
+                const key = d.toLocaleString('default', { month: 'short' });
+                if (result[key]) {
+                    if (t.type === 'income') result[key].income += t.amount;
+                    else result[key].expense += t.amount;
                 }
             }
         });
 
-        return Object.values(stats);
-    }, [transactions, settings.activeProfile]);
+        return Object.entries(result).map(([name, { income, expense }]) => ({
+            name,
+            Income: income,
+            Expense: expense
+        }));
+    }, [transactions, settings.activeSpace]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',

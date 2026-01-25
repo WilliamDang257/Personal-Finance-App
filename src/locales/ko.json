@@ -1,0 +1,54 @@
+{
+    "settings": {
+        "title": "설정",
+        "subtitle": "환경설정 및 데이터를 관리합니다.",
+        "general": "일반 구성",
+        "currency": "통화",
+        "currencyDesc": "표시할 기본 통화를 선택하세요.",
+        "language": "언어",
+        "languageDesc": "선호하는 언어를 선택하세요.",
+        "theme": "테마",
+        "budgetRules": "예산 규칙",
+        "enforceUnique": "고유 카테고리 적용",
+        "enforceUniqueDesc": "프로필 내에서 동일한 카테고리에 대해 여러 예산을 생성하지 못하도록 합니다.",
+        "categoryManagement": "카테고리 관리",
+        "expenseCategories": "지출 카테고리",
+        "incomeCategories": "수입 카테고리",
+        "newExpenseCategory": "새 지출 카테고리...",
+        "newIncomeCategory": "새 수입 카테고리...",
+        "spaceManagement": "공간 관리",
+        "yourSpaces": "내 공간",
+        "active": "활성",
+        "createNewSpace": "새 공간 만들기 (예: 여행, 비즈니스)...",
+        "createSpace": "공간 만들기",
+        "demoMode": "데모 모드",
+        "demoModeDesc": "기능을 탐색하기 위해 샘플 데이터(거래, 자산, 예산)로 애플리케이션을 채웁니다.",
+        "demoModeWarning": "경고: 현재 데이터를 덮어씁니다!",
+        "loadDemoData": "데모 데이터 로드",
+        "dataManagement": "데이터 관리",
+        "exportJSON": "데이터 내보내기 (JSON)",
+        "exportJSONDesc": "모든 거래, 자산 및 설정의 백업을 다운로드합니다.",
+        "exportExcel": "Excel로 내보내기",
+        "exportExcelDesc": "외부 분석을 위해 데이터를 Excel로 내보냅니다 (개인 및 가족).",
+        "importJSON": "데이터 가져오기 (JSON)",
+        "importJSONDesc": "백업 파일에서 복원합니다.",
+        "importExcel": "Excel에서 가져오기",
+        "importExcelDesc": "Excel 파일에서 거래 및 자산을 가져옵니다 (수입, 지출, 자산 시트).",
+        "resetAllData": "모든 데이터 재설정",
+        "resetWarning": "주의: 이 작업은 취소할 수 없습니다."
+    },
+    "dashboard": {
+        "title": "대시보드",
+        "subtitle": "재무 건강에 대한 전략적 개요."
+    },
+    "transactions": {
+        "title": "거래"
+    },
+    "budgets": {
+        "title": "예산"
+    },
+    "assets": {
+        "equity": "자산",
+        "liabilities": "부채"
+    }
+}

@@ -31,7 +31,7 @@ export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
         if (settings.budgetRules?.enforceUniqueCategory) {
             const isDuplicate = budgets.some(b =>
                 b.category === category &&
-                b.profile === (initialData ? initialData.profile : settings.activeProfile) &&
+                b.spaceId === (initialData ? initialData.spaceId : settings.activeSpace) &&
                 b.id !== (initialData ? initialData.id : '')
             );
 
@@ -46,7 +46,7 @@ export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
             category,
             amount: parseFloat(amount),
             period: 'year' as const, // Force yearly
-            profile: initialData ? initialData.profile : settings.activeProfile,
+            spaceId: initialData ? initialData.spaceId : settings.activeSpace,
             subItems: initialData?.subItems || [],
         };
 

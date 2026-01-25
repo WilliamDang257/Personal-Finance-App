@@ -1,7 +1,7 @@
-import type { Asset, Budget, Transaction, AppSettings, Profile } from '../types';
+import type { Asset, Budget, Transaction, AppSettings } from '../types';
 
 export const generateDemoData = () => {
-    const profile: Profile = 'personal';
+    const spaceId = 'personal';
     const now = new Date();
 
     // Helper to get date string relative to now
@@ -11,97 +11,289 @@ export const generateDemoData = () => {
         return d.toISOString().split('T')[0];
     };
 
+    const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // Exchange rate: 1 USD = 26,000 VND
+    // Scaling values to be realistic in VND (Millions/Billions)
+
+    // --- 1. Diverse Assets ---
     const assets: Asset[] = [
+        // Cash
         {
-            id: 'demo-asset-1',
-            name: 'Checking Account',
+            id: 'demo-cash-1',
+            name: 'Checking Account (VCB)',
             type: 'Bank Deposit',
-            value: 5000,
-            profile,
+            value: 220000000, // ~8.5k USD
+            spaceId,
             bucket: 'cash',
             lastUpdated: getDate(0)
         },
         {
-            id: 'demo-asset-2',
-            name: 'Tech Growth Stock',
-            type: 'Stock',
-            value: 12000,
-            quantity: 50,
-            pricePerUnit: 240,
-            profile,
+            id: 'demo-cash-2',
+            name: 'Savings Term (TPBank)',
+            type: 'saving',
+            value: 500000000, // ~20k USD
+            spaceId,
+            bucket: 'cash',
+            lastUpdated: getDate(5)
+        },
+        {
+            id: 'demo-cash-3',
+            name: 'Wallet Cash',
+            type: 'cash',
+            value: 12000000, // ~450 USD
+            spaceId,
+            bucket: 'cash',
+            lastUpdated: getDate(1)
+        },
+
+        // Investment
+        {
+            id: 'demo-inv-1',
+            name: 'FPT Corp (FPT)',
+            type: 'stock',
+            value: 390000000, // ~15k USD
+            quantity: 3000,
+            pricePerUnit: 130000,
+            spaceId,
             bucket: 'investment',
             lastUpdated: getDate(1)
         },
         {
-            id: 'demo-asset-3',
-            name: 'Bitcoin Reserve',
-            type: 'Crypto',
-            value: 45000,
-            quantity: 0.5,
-            pricePerUnit: 90000,
-            profile,
+            id: 'demo-inv-2',
+            name: 'Vinamilk (VNM)',
+            type: 'stock',
+            value: 650000000, // ~25k USD
+            quantity: 10000,
+            pricePerUnit: 65000,
+            spaceId,
+            bucket: 'investment',
+            lastUpdated: getDate(1)
+        },
+        {
+            id: 'demo-inv-3',
+            name: 'Bitcoin (BTC)',
+            type: 'crypto',
+            value: 1690000000, // ~65k USD
+            quantity: 0.85,
+            pricePerUnit: 1988000000,
+            spaceId,
             bucket: 'investment',
             lastUpdated: getDate(0)
         },
         {
-            id: 'demo-asset-4',
-            name: 'Credit Card',
+            id: 'demo-inv-4',
+            name: 'Ethereum (ETH)',
+            type: 'crypto',
+            value: 312000000, // ~12k USD
+            quantity: 4.5,
+            pricePerUnit: 69300000,
+            spaceId,
+            bucket: 'investment',
+            lastUpdated: getDate(0)
+        },
+        {
+            id: 'demo-inv-5',
+            name: 'Vinhomes Apt (Ocean Park)',
+            type: 'real_estate',
+            value: 9100000000, // ~350k USD
+            spaceId,
+            bucket: 'investment',
+            lastUpdated: getDate(30)
+        },
+
+        // Liabilities
+        {
+            id: 'demo-liab-1',
+            name: 'Credit Card (VIB)',
             type: 'credit',
-            value: 1500,
-            profile,
+            value: 32500000, // ~1.2k USD
+            spaceId,
             bucket: 'payable',
             lastUpdated: getDate(2)
+        },
+        {
+            id: 'demo-liab-2',
+            name: 'Car Loan (VinFast)',
+            type: 'loan',
+            value: 468000000, // ~18k USD
+            spaceId,
+            bucket: 'payable',
+            lastUpdated: getDate(30)
         }
     ];
 
+    // --- 2. Detailed Budgets ---
     const budgets: Budget[] = [
         {
             id: 'demo-budget-1',
-            category: 'Food',
-            amount: 6000, // Yearly
+            category: 'Housing',
+            amount: 624000000, // ~24k USD
             period: 'year',
-            profile,
+            spaceId,
             subItems: [
-                { id: 'sub-1', name: 'Groceries', amount: 4000 },
-                { id: 'sub-2', name: 'Dining Out', amount: 2000 }
+                { id: 'sub-1', name: 'Rent/Mortgage', amount: 468000000 },
+                { id: 'sub-2', name: 'Utilities', amount: 78000000 },
+                { id: 'sub-3', name: 'Maintenance', amount: 78000000 }
             ]
         },
         {
             id: 'demo-budget-2',
-            category: 'Shopping',
-            amount: 3000,
+            category: 'Food',
+            amount: 218400000, // ~8.4k USD
             period: 'year',
-            profile,
+            spaceId,
+            subItems: [
+                { id: 'sub-4', name: 'Groceries', amount: 156000000 },
+                { id: 'sub-5', name: 'Dining Out', amount: 62400000 }
+            ]
         },
         {
             id: 'demo-budget-3',
-            category: 'Travel',
-            amount: 5000,
+            category: 'Transportation',
+            amount: 156000000, // ~6k USD
             period: 'year',
-            profile,
+            spaceId,
+            subItems: [
+                { id: 'sub-6', name: 'Fuel', amount: 78000000 },
+                { id: 'sub-7', name: 'Car Insurance', amount: 31200000 },
+                { id: 'sub-8', name: 'Services', amount: 46800000 }
+            ]
+        },
+        {
+            id: 'demo-budget-4',
+            category: 'Entertainment',
+            amount: 93600000, // ~3.6k USD
+            period: 'year',
+            spaceId,
+        },
+        {
+            id: 'demo-budget-5',
+            category: 'Shopping',
+            amount: 124800000, // ~4.8k USD
+            period: 'year',
+            spaceId,
         }
     ];
 
-    const transactions: Transaction[] = [
-        { id: 't1', date: getDate(1), amount: 150, category: 'Food', description: 'Weekly Groceries', type: 'expense', profile },
-        { id: 't2', date: getDate(3), amount: 50, category: 'Food', description: 'Lunch w/ friends', type: 'expense', profile },
-        { id: 't3', date: getDate(5), amount: 120, category: 'Transport', description: 'Gas refill', type: 'expense', profile },
-        { id: 't4', date: getDate(10), amount: 2000, category: 'Salary', description: 'Monthly Salary', type: 'income', profile },
-        { id: 't5', date: getDate(12), amount: 500, category: 'Shopping', description: 'New Shoes', type: 'expense', profile },
-        { id: 't6', date: getDate(15), amount: 100, category: 'Entertainment', description: 'Cinema', type: 'expense', profile },
-        { id: 't7', date: getDate(20), amount: 300, category: 'Utilities', description: 'Electricity Bill', type: 'expense', profile },
-    ];
+    // --- 3. Realistic Transactions (1 Year) ---
+    const transactions: Transaction[] = [];
+    const categories = ['Food', 'Transportation', 'Housing', 'Entertainment', 'Shopping', 'Health', 'Education', 'Travel'];
 
+    // Monthly Recurring (Salary & Rent) for 12 months
+    for (let i = 0; i < 12; i++) {
+        // Salary (Income) - ~5.5k USD = 143M VND
+        transactions.push({
+            id: crypto.randomUUID(),
+            date: getDate(i * 30 + 15), // Mid-month
+            amount: 143000000,
+            category: 'Salary',
+            description: 'Monthly Salary',
+            type: 'income',
+            spaceId
+        });
+
+        // Rent (Expense) - ~1.5k USD = 39M VND
+        transactions.push({
+            id: crypto.randomUUID(),
+            date: getDate(i * 30 + 1), // 1st of month
+            amount: 39000000,
+            category: 'Housing',
+            description: 'Monthly Rent',
+            type: 'expense',
+            spaceId
+        });
+    }
+
+    // Random Daily Expenses
+    for (let i = 0; i < 150; i++) { // Generate ~150 random transactions
+        const daysAgo = getRandomInt(0, 365);
+        const category = categories[getRandomInt(0, categories.length - 1)];
+        let amount = 0;
+        let description = '';
+
+        switch (category) {
+            case 'Food':
+                amount = getRandomInt(400000, 4000000); // 400k - 4M VND
+                description = Math.random() > 0.5 ? 'Groceries' : 'Restaurant';
+                break;
+            case 'Transportation':
+                amount = getRandomInt(100000, 2000000); // 100k - 2M VND
+                description = 'Fuel / Grab';
+                break;
+            case 'Entertainment':
+                amount = getRandomInt(500000, 2500000); // 500k - 2.5M VND
+                description = 'Movies / Netflix / Games';
+                break;
+            case 'Shopping':
+                amount = getRandomInt(1000000, 8000000); // 1M - 8M VND
+                description = 'Shopee / Clothing';
+                break;
+            case 'Health':
+                amount = getRandomInt(500000, 3000000); // 500k - 3M VND
+                description = 'Pharmacy / Gym';
+                break;
+            case 'Travel':
+                amount = getRandomInt(2000000, 15000000); // 2M - 15M VND
+                description = 'Flight / Hotel / Trip';
+                break;
+            default:
+                amount = getRandomInt(500000, 2000000);
+                description = 'Misc Expense';
+        }
+
+        transactions.push({
+            id: crypto.randomUUID(),
+            date: getDate(daysAgo),
+            amount,
+            category,
+            description,
+            type: 'expense',
+            spaceId
+        });
+    }
+
+    // Add a few big investment returns (Income)
+    transactions.push({
+        id: crypto.randomUUID(),
+        date: getDate(45),
+        amount: 31200000, // ~1.2k USD
+        category: 'Investment',
+        description: 'Dividend Payout',
+        type: 'income',
+        spaceId
+    });
+    transactions.push({
+        id: crypto.randomUUID(),
+        date: getDate(180),
+        amount: 22100000, // ~850 USD
+        category: 'Freelance',
+        description: 'Side Project',
+        type: 'income',
+        spaceId
+    });
+
+    // --- 4. Settings ---
     const settings: AppSettings = {
-        currency: 'USD',
+        currency: 'VND',
         theme: 'light',
-        activeProfile: 'personal',
+        activeSpace: 'personal',
+        spaces: [
+            { id: 'personal', name: 'Personal' },
+            { id: 'family', name: 'Family' }
+        ],
         budgetRules: { enforceUniqueCategory: true },
         categories: {
-            expense: ['Food', 'Transport', 'Shopping', 'Entertainment', 'Utilities', 'Travel'],
-            income: ['Salary', 'Freelance', 'Investment', 'Other']
+            expense: ['Food', 'Housing', 'Transportation', 'Entertainment', 'Shopping', 'Health', 'Education', 'Travel', 'Utilities'],
+            income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+        },
+        language: 'en',
+        chat: {
+            enabled: false,
+            provider: 'gemini',
+            enableProactive: false
         }
     };
 
-    return { assets, budgets, transactions, settings };
+    return { assets, budgets, transactions, settings, monthlySummaries: [] };
 };

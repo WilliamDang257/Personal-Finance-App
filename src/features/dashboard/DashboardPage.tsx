@@ -1,5 +1,6 @@
 import { NetWorthCard } from './NetWorthCard';
 import { RecentTransactions } from './RecentTransactions';
+import { MonthlyReviewCard } from './MonthlyReviewCard';
 import { CashFlowChart } from './CashFlowChart';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { AssetAllocationChart } from '../assets/AssetAllocationChart';
@@ -14,14 +15,22 @@ export function DashboardPage() {
                 <p className="text-muted-foreground mt-2">Strategic overview of your financial health.</p>
             </div>
 
-            {/* Top Row: Net Worth */}
-            <NetWorthCard />
+            {/* Top Row: Net Worth & YTD Spending */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                    <NetWorthCard />
+                </div>
+                <div className="lg:col-span-1">
+                    <YTDSpendingCard />
+                </div>
+            </div>
 
-            {/* Second Row: Spending & Budget Pacing */}
-            <div className="grid gap-6 md:grid-cols-2">
-                <YTDSpendingCard />
+            {/* Second Row: Budget Progress */}
+            <div className="w-full">
                 <BudgetProgressCard />
             </div>
+
+
 
             {/* Charts Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -50,6 +59,7 @@ export function DashboardPage() {
             {/* Fourth Row: Trends & Breakdown */}
             <div className="grid gap-6 lg:grid-cols-2">
                 <CashFlowChart />
+                <MonthlyReviewCard />
             </div>
 
             <RecentTransactions />

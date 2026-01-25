@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
+import { cn } from '../../lib/utils';
 
-interface TransactionSummaryProps {
-    type: 'income' | 'expense';
+export interface TransactionSummaryProps {
+    type: 'income' | 'expense' | 'all';
 }
 
 export function TransactionSummary({ type }: TransactionSummaryProps) {
@@ -18,19 +19,28 @@ export function TransactionSummary({ type }: TransactionSummaryProps) {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        const activeProfile = settings.activeProfile;
+        const activeSpace = settings.activeSpace;
 
         const currentMonthTransactions = transactions.filter(t => {
             const d = new Date(t.date);
-            return t.type === type &&
-                t.profile === activeProfile &&
+            const matchesType = type === 'all' ? true : t.type === type;
+            return matchesType &&
+                t.spaceId === activeSpace &&
                 d.getMonth() === currentMonth &&
                 d.getFullYear() === currentYear;
         });
 
-        const total = currentMonthTransactions.reduce((acc, t) => acc + t.amount, 0);
+        const total = currentMonthTransactions.reduce((acc, t) => {
+            if (type === 'all') {
+                return acc + (t.type === 'income' ? t.amount : -t.amount);
+            }
+            return acc + t.amount;
+        }, 0);
 
         const byCategory = currentMonthTransactions.reduce((acc, t) => {
+            // For 'all', we might want to group by category regardless of type?
+            // Or maybe just show top categories by absolute amount?
+            // Let's grouping normally.
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
@@ -40,16 +50,20 @@ export function TransactionSummary({ type }: TransactionSummaryProps) {
             .sort((a, b) => b.amount - a.amount);
 
         return { total, topCategories };
-    }, [transactions, settings.activeProfile, type]);
+    }, [transactions, settings.activeSpace, type]);
 
     return (
         <div className="rounded-xl border bg-card p-6 shadow-sm mb-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        {type === 'income' ? 'Total Income' : 'Total Expenses'} (This Month)
+                        {type === 'income' ? 'Total Income' : type === 'expense' ? 'Total Expenses' : 'Net Flow'} (This Month)
                     </p>
-                    <h3 className={`mt-1 text-3xl font-bold tracking-tight ${type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <h3 className={cn("mt-1 text-3xl font-bold tracking-tight",
+                        type === 'income' ? 'text-emerald-600' :
+                            type === 'expense' ? 'text-red-600' :
+                                summary.total >= 0 ? 'text-emerald-600' : 'text-red-600'
+                    )}>
                         {formatter.format(summary.total)}
                     </h3>
                 </div>

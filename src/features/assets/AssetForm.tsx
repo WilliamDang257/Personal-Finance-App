@@ -66,9 +66,9 @@ export function AssetForm({ onClose, initialData, suggestedType, group, mode = '
             value: parseFloat(value),
             quantity: quantity ? parseFloat(quantity) : undefined,
             pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
-            profile: initialData ? initialData.profile : settings.activeProfile,
+            spaceId: initialData ? initialData.spaceId : settings.activeSpace,
             // Bucket logic can be inferred or simplified. For now mapping to simple buckets.
-            bucket: type === 'payable' ? 'payable' : (['Stock', 'Bond', 'Crypto', 'Gold', 'investment'].includes(type) ? 'investment' : 'cash'),
+            bucket: ['payable', 'loan', 'credit'].includes(type) ? 'payable' : (['Stock', 'Bond', 'Crypto', 'Gold', 'investment'].includes(type) ? 'investment' : 'cash'),
             lastUpdated: new Date().toISOString()
         };
 
@@ -180,6 +180,8 @@ export function AssetForm({ onClose, initialData, suggestedType, group, mode = '
                             required
                         />
                     </div>
+
+
 
                     <button
                         type="submit"

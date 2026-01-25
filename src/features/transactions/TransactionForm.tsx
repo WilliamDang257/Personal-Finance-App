@@ -16,6 +16,7 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
     const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [note, setNote] = useState('');
 
     useEffect(() => {
         if (initialData) {
@@ -24,6 +25,7 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
             setCategory(initialData.category);
             setDescription(initialData.description);
             setDate(initialData.date);
+            setNote(initialData.note || '');
         } else {
             // Set default category for the current type
             // Set default category for the current type
@@ -47,7 +49,8 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
             type,
             category,
             description,
-            profile: initialData ? initialData.profile : settings.activeProfile,
+            note,
+            spaceId: initialData ? initialData.spaceId : settings.activeSpace,
         };
 
         if (initialData) {
@@ -142,6 +145,17 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                             placeholder="Description"
                             required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Note</label>
+                        <textarea
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                            placeholder="Optional note"
+                            rows={3}
                         />
                     </div>
 

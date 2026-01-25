@@ -15,7 +15,9 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />
           <Route path="transactions" element={<TransactionsPage />} />
-          <Route path="assets" element={<AssetsPage />} />
+          <Route path="assets/equity" element={<AssetsPage mode="equity" />} />
+          <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
+          <Route path="assets" element={<Navigate to="assets/equity" replace />} />
           <Route path="budgets" element={<BudgetsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

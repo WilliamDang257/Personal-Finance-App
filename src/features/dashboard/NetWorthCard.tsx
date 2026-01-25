@@ -3,13 +3,13 @@ import { useStore } from '../../hooks/useStore';
 
 export function NetWorthCard() {
     const { assets, transactions, budgets, settings } = useStore();
-    const activeProfile = settings.activeProfile;
+    const activeSpace = settings.activeSpace;
 
     // 1. Calculate Current Stats
     const { totalAssets, liabilities, netWorth } = assets
-        .filter(a => a.profile === activeProfile)
+        .filter(a => a.spaceId === activeSpace)
         .reduce((acc, curr) => {
-            if (curr.type === 'payable') {
+            if (['payable', 'loan', 'credit'].includes(curr.type) || curr.bucket === 'payable') {
                 acc.liabilities += curr.value;
                 acc.netWorth -= curr.value;
             } else {
@@ -31,7 +31,7 @@ export function NetWorthCard() {
     const ytdIncome = transactions
         .filter(t =>
             t.type === 'income' &&
-            t.profile === activeProfile &&
+            t.spaceId === activeSpace &&
             new Date(t.date).getFullYear() === currentYear
         )
         .reduce((sum, t) => sum + t.amount, 0);
@@ -41,13 +41,13 @@ export function NetWorthCard() {
 
     // Expense Projection (Based on Remaining Budget)
     const totalYearlyBudget = budgets
-        .filter(b => b.profile === activeProfile)
+        .filter(b => b.spaceId === activeSpace)
         .reduce((sum, b) => sum + b.amount, 0); // Assuming all budgets are yearly per new default
 
     const ytdExpense = transactions
         .filter(t =>
             t.type === 'expense' &&
-            t.profile === activeProfile &&
+            t.spaceId === activeSpace &&
             new Date(t.date).getFullYear() === currentYear
         )
         .reduce((sum, t) => sum + t.amount, 0);

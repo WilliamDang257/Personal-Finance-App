@@ -1,0 +1,54 @@
+{
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your preferences and data.",
+        "general": "General Configuration",
+        "currency": "Currency",
+        "currencyDesc": "Select your primary currency for display.",
+        "language": "Language",
+        "languageDesc": "Select your preferred language.",
+        "theme": "Theme",
+        "budgetRules": "Budget Rules",
+        "enforceUnique": "Enforce Unique Categories",
+        "enforceUniqueDesc": "Prevent creating multiple budgets for the same category within a profile.",
+        "categoryManagement": "Category Management",
+        "expenseCategories": "Expense Categories",
+        "incomeCategories": "Income Categories",
+        "newExpenseCategory": "New expense category...",
+        "newIncomeCategory": "New income category...",
+        "spaceManagement": "Space Management",
+        "yourSpaces": "Your Spaces",
+        "active": "Active",
+        "createNewSpace": "Create new space (e.g. Travel, Business)...",
+        "createSpace": "Create Space",
+        "demoMode": "Demo Mode",
+        "demoModeDesc": "Populate the application with sample data (Transactions, Assets, Budgets) to explore the features.",
+        "demoModeWarning": "Warning: This will overwrite your current data!",
+        "loadDemoData": "Load Demo Data",
+        "dataManagement": "Data Management",
+        "exportJSON": "Export Data (JSON)",
+        "exportJSONDesc": "Download a backup of all your transactions, assets, and settings.",
+        "exportExcel": "Export to Excel",
+        "exportExcelDesc": "Export data to Excel for external analysis (Personal & Family).",
+        "importJSON": "Import Data (JSON)",
+        "importJSONDesc": "Restore from a backup file.",
+        "importExcel": "Import from Excel",
+        "importExcelDesc": "Import transactions and assets from your Excel file (Income, Expense, Asset sheets).",
+        "resetAllData": "Reset All Data",
+        "resetWarning": "Caution: This action cannot be undone."
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "subtitle": "Strategic overview of your financial health."
+    },
+    "transactions": {
+        "title": "Transactions"
+    },
+    "budgets": {
+        "title": "Budgets"
+    },
+    "assets": {
+        "equity": "Equity",
+        "liabilities": "Liabilities"
+    }
+}
