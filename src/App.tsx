@@ -18,24 +18,34 @@ function LoadingSpinner() {
   );
 }
 
+import { LockScreen } from './components/auth/LockScreen';
+import { useStore } from './hooks/useStore';
+import { useEffect } from 'react';
+
 function App() {
+  const { isLocked, settings } = useStore();
+  const shouldLock = isLocked && settings.security?.enabled;
+
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="transactions" element={<TransactionsPage />} />
-            <Route path="investments" element={<InvestmentsPage />} />
-            <Route path="assets/equity" element={<AssetsPage mode="equity" />} />
-            <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
-            <Route path="assets" element={<Navigate to="assets/equity" replace />} />
-            <Route path="budgets" element={<BudgetsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      {shouldLock && <LockScreen />}
+      <div className={shouldLock ? 'blur-sm pointer-events-none select-none h-screen overflow-hidden' : ''}>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="transactions" element={<TransactionsPage />} />
+              <Route path="investments" element={<InvestmentsPage />} />
+              <Route path="assets/equity" element={<AssetsPage mode="equity" />} />
+              <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
+              <Route path="assets" element={<Navigate to="assets/equity" replace />} />
+              <Route path="budgets" element={<BudgetsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </div>
     </BrowserRouter>
   );
 }

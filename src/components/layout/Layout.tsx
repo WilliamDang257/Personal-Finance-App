@@ -57,7 +57,14 @@ const TOUR_STEPS: GuideStep[] = [
         path: '/settings'
     },
     {
-        target: 'button:has(.h-4.w-4.text-primary)', // Crude selector for the feedback button or chatbot- if exists
+        target: '#security-settings',
+        title: 'Security',
+        content: 'Keep your data safe! Enable PIN protection here to prevent unauthorized access.',
+        position: 'top',
+        path: '/settings'
+    },
+    {
+        target: '#chatbot-trigger',
         title: 'AI Assistant',
         content: 'Need help or insights? Chat with your AI financial advisor here.',
         position: 'top'

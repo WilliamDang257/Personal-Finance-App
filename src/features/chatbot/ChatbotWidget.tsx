@@ -54,6 +54,7 @@ export function ChatbotWidget() {
             {/* Floating Button */}
             {!isOpen && (
                 <button
+                    id="chatbot-trigger"
                     onClick={() => setIsOpen(true)}
                     className="fixed bottom-6 right-6 z-50 overflow-hidden h-16 w-16 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 border-2 border-primary"
                     title="Open Finance Bro"

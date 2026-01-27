@@ -114,4 +114,8 @@ export interface AppSettings {
         investment: string[];
     };
     chat: ChatSettings;
+    security: {
+        enabled: boolean;
+        pin?: string;
+    };
 }

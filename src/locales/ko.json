@@ -38,7 +38,18 @@
         "importExcel": "Excel에서 가져오기",
         "importExcelDesc": "Excel 파일에서 거래 및 자산을 가져옵니다 (수입, 지출, 자산 시트).",
         "resetAllData": "모든 데이터 재설정",
-        "resetWarning": "주의: 이 작업은 취소할 수 없습니다."
+        "resetWarning": "주의: 이 작업은 취소할 수 없습니다.",
+        "security": {
+            "title": "보안",
+            "enablePin": "PIN 보호 활성화",
+            "changePin": "PIN 변경",
+            "setPin": "PIN 설정",
+            "enterPin": "PIN 입력",
+            "newPin": "새 PIN",
+            "confirmPin": "PIN 확인",
+            "pinMismatch": "PIN이 일치하지 않습니다",
+            "currentPin": "현재 PIN"
+        }
     },
     "dashboard": {
         "title": "대시보드",

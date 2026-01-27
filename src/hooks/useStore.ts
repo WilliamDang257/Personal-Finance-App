@@ -46,6 +46,14 @@ interface AppState {
     nextStep: () => void;
     prevStep: () => void;
     stopGuide: () => void;
+    setGuideStep: (step: number) => void;
+
+    // Security
+    isLocked: boolean;
+    setPin: (pin: string) => void;
+    unlock: () => void;
+    lock: () => void;
+    verifyPin: (pin: string) => boolean;
 }
 
 import CATEGORIES from '../data/categories.json';
@@ -80,6 +88,9 @@ export const useStore = create<AppState>()(
                     enabled: false,
                     provider: 'gemini',
                     enableProactive: false
+                },
+                security: {
+                    enabled: false
                 }
             },
 
@@ -171,13 +182,36 @@ export const useStore = create<AppState>()(
             nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
             prevStep: () => set((state) => ({ currentStep: Math.max(0, state.currentStep - 1) })),
             stopGuide: () => set({ activeGuide: null, currentStep: 0 }),
+            setGuideStep: (step) => set({ currentStep: step }),
+
+            // Security Actions
+            isLocked: false,
+            setPin: (pin) => set((state) => ({
+                settings: {
+                    ...state.settings,
+                    security: { enabled: true, pin }
+                },
+                isLocked: false
+            })),
+            unlock: () => {
+                sessionStorage.setItem('finance_app_unlocked', 'true');
+                set({ isLocked: false });
+            },
+            lock: () => {
+                sessionStorage.removeItem('finance_app_unlocked');
+                set({ isLocked: true });
+            },
+            verifyPin: (pin) => {
+                const state = get();
+                return state.settings.security?.pin === pin;
+            },
         }),
         {
             name: 'finance-app-storage',
             version: 4, // Increment version to trigger migrate
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             migrate: (persistedState: any, version: number) => {
-                let newState = { ...persistedState };
+                const newState = { ...persistedState };
 
                 // Migration from v0 or v1 to v2
                 if (version < 2) {
@@ -245,7 +279,23 @@ export const useStore = create<AppState>()(
                 }
 
                 return newState;
-            }
+            },
+            onRehydrateStorage: () => (state) => {
+                if (state && state.settings?.security?.enabled && state.settings.security.pin) {
+                    const isSessionUnlocked = sessionStorage.getItem('finance_app_unlocked') === 'true';
+                    state.isLocked = !isSessionUnlocked;
+                }
+                // No need for else, isLocked defaults to false and isn't persisted anymore
+            },
+            partialize: (state) => ({
+                transactions: state.transactions,
+                assets: state.assets,
+                investmentLogs: state.investmentLogs,
+                budgets: state.budgets,
+                monthlySummaries: state.monthlySummaries,
+                chatMessages: state.chatMessages,
+                settings: state.settings,
+            }),
         }
     )
 );

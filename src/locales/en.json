@@ -38,7 +38,18 @@
         "importExcel": "Import from Excel",
         "importExcelDesc": "Import transactions and assets from your Excel file (Income, Expense, Asset sheets).",
         "resetAllData": "Reset All Data",
-        "resetWarning": "Caution: This action cannot be undone."
+        "resetWarning": "Caution: This action cannot be undone.",
+        "security": {
+            "title": "Security",
+            "enablePin": "Enable PIN Protection",
+            "changePin": "Change PIN",
+            "setPin": "Set PIN",
+            "enterPin": "Enter PIN",
+            "newPin": "New PIN",
+            "confirmPin": "Confirm PIN",
+            "pinMismatch": "PINs do not match",
+            "currentPin": "Current PIN"
+        }
     },
     "dashboard": {
         "title": "Dashboard",

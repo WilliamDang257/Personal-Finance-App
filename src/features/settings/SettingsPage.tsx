@@ -3,7 +3,7 @@ import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import { hasEmbeddedKeys } from '../../config/aiConfig';
 import type { AppSettings } from '../../types';
-import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart, Settings, Tags, Sparkles, Target } from 'lucide-react';
+import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart, Settings, Tags, Sparkles, Target, Shield } from 'lucide-react';
 import { useState, useRef } from 'react';
 
 export function SettingsPage() {
@@ -48,7 +48,10 @@ export function SettingsPage() {
                 {activeTab === 'general' && (
                     <div className="grid gap-6 md:grid-cols-2">
                         <GeneralSettings settings={settings} updateSettings={updateSettings} t={t} />
-                        <BudgetRulesSettings settings={settings} updateSettings={updateSettings} t={t} />
+                        <div className="space-y-6">
+                            <BudgetRulesSettings settings={settings} updateSettings={updateSettings} t={t} />
+                            <SecuritySettings settings={settings} updateSettings={updateSettings} t={t} />
+                        </div>
                     </div>
                 )}
 
@@ -908,6 +911,194 @@ function SpaceManagement({ settings, addSpace, updateSpace, removeSpace, activeS
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
+    const [pin, setPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [currentPin, setCurrentPin] = useState('');
+    const [isSettingPin, setIsSettingPin] = useState(false);
+    const [isChangingPin, setIsChangingPin] = useState(false);
+    const [step, setStep] = useState<'verify' | 'set'>('verify'); // For change flow
+    const [error, setError] = useState('');
+
+    const handleSetPin = () => {
+        if (pin.length !== 6) {
+            setError('PIN must be 6 digits');
+            return;
+        }
+        if (pin !== confirmPin) {
+            setError(t.settings?.security?.pinMismatch || 'PINs do not match');
+            return;
+        }
+
+        useStore.getState().setPin(pin);
+        resetState();
+    };
+
+    const handleVerifyCurrentPin = () => {
+        const isValid = useStore.getState().verifyPin(currentPin);
+        if (isValid) {
+            setStep('set');
+            setError('');
+            setCurrentPin('');
+        } else {
+            setError(t.settings?.security?.incorrectPin || 'Incorrect PIN');
+        }
+    };
+
+    const resetState = () => {
+        setIsSettingPin(false);
+        setIsChangingPin(false);
+        setStep('verify');
+        setPin('');
+        setConfirmPin('');
+        setCurrentPin('');
+        setError('');
+    };
+
+    return (
+        <div id="security-settings" className="rounded-xl border bg-card p-6 shadow-sm h-fit">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                {t.settings.security?.title || 'Security'}
+            </h3>
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                        <label className="text-sm font-medium">{t.settings.security?.enablePin || 'Enable PIN Protection'}</label>
+                        <p className="text-xs text-muted-foreground">Require 6-digit PIN to access app</p>
+                    </div>
+                    {settings.security?.enabled ? (
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setIsChangingPin(true);
+                                    setStep('verify');
+                                    setIsSettingPin(false);
+                                }}
+                                className="text-sm text-primary hover:underline px-2"
+                            >
+                                {t.settings.security?.changePin || 'Change PIN'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (confirm(t.settings.security?.disableConfirm || 'Are you sure you want to disable PIN protection?')) {
+                                        updateSettings({
+                                            security: {
+                                                enabled: false,
+                                                pin: ''
+                                            }
+                                        });
+                                    }
+                                }}
+                                className="text-sm text-destructive hover:underline px-2"
+                            >
+                                Disable
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => {
+                                setIsSettingPin(true);
+                                setIsChangingPin(false);
+                            }}
+                            className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-sm"
+                        >
+                            Enable
+                        </button>
+                    )}
+                </div>
+
+                {/* Enable PIN Flow */}
+                {isSettingPin && (
+                    <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                        <h4 className="text-sm font-medium">{t.settings.security?.setPin || 'Set PIN'}</h4>
+                        <div className="space-y-2">
+                            <input
+                                type="password"
+                                maxLength={6}
+                                value={pin}
+                                onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                placeholder={t.settings.security?.newPin || 'New PIN'}
+                                className="w-full p-2 rounded-md border text-sm"
+                            />
+                            <input
+                                type="password"
+                                maxLength={6}
+                                value={confirmPin}
+                                onChange={(e) => setConfirmPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                placeholder={t.settings.security?.confirmPin || 'Confirm PIN'}
+                                className="w-full p-2 rounded-md border text-sm"
+                            />
+                            {error && <p className="text-xs text-destructive">{error}</p>}
+                            <div className="flex justify-end gap-2">
+                                <button onClick={resetState} className="px-3 py-1 text-sm">{t.common?.cancel || 'Cancel'}</button>
+                                <button onClick={handleSetPin} className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Change PIN Flow */}
+                {isChangingPin && (
+                    <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                        <h4 className="text-sm font-medium">{t.settings.security?.changePin || 'Change PIN'}</h4>
+
+                        {step === 'verify' ? (
+                            <div className="space-y-2">
+                                <p className="text-xs text-muted-foreground">Enter current PIN to continue</p>
+                                <input
+                                    type="password"
+                                    maxLength={6}
+                                    value={currentPin}
+                                    onChange={(e) => setCurrentPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                    placeholder={t.settings.security?.currentPin || 'Current PIN'}
+                                    className="w-full p-2 rounded-md border text-sm"
+                                    autoFocus
+                                />
+                                {error && <p className="text-xs text-destructive">{error}</p>}
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={resetState} className="px-3 py-1 text-sm">{t.common?.cancel || 'Cancel'}</button>
+                                    <button
+                                        onClick={handleVerifyCurrentPin}
+                                        disabled={currentPin.length !== 6}
+                                        className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <input
+                                    type="password"
+                                    maxLength={6}
+                                    value={pin}
+                                    onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                    placeholder={t.settings.security?.newPin || 'New PIN'}
+                                    className="w-full p-2 rounded-md border text-sm"
+                                    autoFocus
+                                />
+                                <input
+                                    type="password"
+                                    maxLength={6}
+                                    value={confirmPin}
+                                    onChange={(e) => setConfirmPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                    placeholder={t.settings.security?.confirmPin || 'Confirm PIN'}
+                                    className="w-full p-2 rounded-md border text-sm"
+                                />
+                                {error && <p className="text-xs text-destructive">{error}</p>}
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={resetState} className="px-3 py-1 text-sm">{t.common?.cancel || 'Cancel'}</button>
+                                    <button onClick={handleSetPin} className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm">Save</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

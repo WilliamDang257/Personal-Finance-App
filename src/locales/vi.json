@@ -38,7 +38,18 @@
         "importExcel": "Nhập từ Excel",
         "importExcelDesc": "Nhập giao dịch và tài sản từ tệp Excel (các sheet Thu nhập, Chi tiêu, Tài sản).",
         "resetAllData": "Đặt lại tất cả dữ liệu",
-        "resetWarning": "Cẩn thận: Hành động này không thể hoàn tác."
+        "resetWarning": "Cẩn thận: Hành động này không thể hoàn tác.",
+        "security": {
+            "title": "Bảo mật",
+            "enablePin": "Bật bảo vệ mã PIN",
+            "changePin": "Đổi mã PIN",
+            "setPin": "Đặt mã PIN",
+            "enterPin": "Nhập mã PIN",
+            "newPin": "Mã PIN mới",
+            "confirmPin": "Xác nhận mã PIN",
+            "pinMismatch": "Mã PIN không khớp",
+            "currentPin": "Mã PIN hiện tại"
+        }
     },
     "dashboard": {
         "title": "Bảng điều khiển",
