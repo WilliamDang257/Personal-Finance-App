@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Asset, Transaction, Budget, AppSettings, Space, MonthlySummary, ChatMessage } from '../types';
+import type { Asset, Transaction, Budget, AppSettings, Space, MonthlySummary, ChatMessage, InvestmentLog } from '../types';
 
 interface AppState {
     transactions: Transaction[];
     assets: Asset[];
+    investmentLogs: InvestmentLog[];
     budgets: Budget[];
     monthlySummaries: MonthlySummary[];
     chatMessages: ChatMessage[];
@@ -18,6 +19,9 @@ interface AppState {
     addAsset: (asset: Asset) => void;
     removeAsset: (id: string) => void;
     updateAsset: (asset: Asset) => void;
+    // Investment Log Actions
+    addInvestmentLog: (log: InvestmentLog) => void;
+    removeInvestmentLog: (id: string) => void;
     // Budget Actions
     addBudget: (budget: Budget) => void;
     removeBudget: (id: string) => void;
@@ -34,7 +38,14 @@ interface AppState {
     addSpace: (name: string) => void;
     updateSpace: (id: string, name: string) => void;
     removeSpace: (id: string) => void;
-    importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[] }) => void;
+    importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[] }) => void;
+    // Guide Actions
+    activeGuide: string | null;
+    currentStep: number;
+    startGuide: (guideId: string) => void;
+    nextStep: () => void;
+    prevStep: () => void;
+    stopGuide: () => void;
 }
 
 import CATEGORIES from '../data/categories.json';
@@ -46,10 +57,12 @@ export const useStore = create<AppState>()(
         (set, get) => ({
             transactions: [],
             assets: [],
+            investmentLogs: [],
             budgets: [],
             monthlySummaries: [],
             chatMessages: [],
             settings: {
+                appName: 'Personal Wealth',
                 currency: 'VND',
                 language: 'en',
                 theme: 'light', // Default will be overridden by persist if exists
@@ -59,7 +72,10 @@ export const useStore = create<AppState>()(
                     { id: 'family', name: 'Family' }
                 ],
                 budgetRules: { enforceUniqueCategory: true },
-                categories: CATEGORIES.transaction,
+                categories: {
+                    ...CATEGORIES.transaction,
+                    investment: ['Stock', 'Bond', 'Fund certificate', 'Gold', 'Crypto']
+                },
                 chat: {
                     enabled: false,
                     provider: 'gemini',
@@ -83,6 +99,8 @@ export const useStore = create<AppState>()(
             updateAsset: (a) => set((state) => ({
                 assets: state.assets.map((asset) => (asset.id === a.id ? a : asset)),
             })),
+            addInvestmentLog: (l) => set((state) => ({ investmentLogs: [l, ...state.investmentLogs] })),
+            removeInvestmentLog: (id) => set((state) => ({ investmentLogs: state.investmentLogs.filter((l) => l.id !== id) })),
             addBudget: (b) => set((state) => ({ budgets: [...state.budgets, b] })),
             removeBudget: (id) => set((state) => ({ budgets: state.budgets.filter((b) => b.id !== id) })),
             updateBudget: (b) => set((state) => ({
@@ -136,25 +154,36 @@ export const useStore = create<AppState>()(
                 };
             }),
 
-            importData: (data: any) => set(() => ({
+            importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[] }) => set(() => ({
                 assets: data.assets,
                 budgets: data.budgets,
                 transactions: data.transactions,
                 settings: data.settings,
-                monthlySummaries: data.monthlySummaries
+                monthlySummaries: data.monthlySummaries,
+                chatMessages: data.chatMessages || [],
+                investmentLogs: data.investmentLogs || []
             })),
+
+            // Guide Implementation
+            activeGuide: null,
+            currentStep: 0,
+            startGuide: (guideId: string) => set({ activeGuide: guideId, currentStep: 0 }),
+            nextStep: () => set((state) => ({ currentStep: state.currentStep + 1 })),
+            prevStep: () => set((state) => ({ currentStep: Math.max(0, state.currentStep - 1) })),
+            stopGuide: () => set({ activeGuide: null, currentStep: 0 }),
         }),
         {
             name: 'finance-app-storage',
-            version: 2, // Increment version to trigger migrate
+            version: 4, // Increment version to trigger migrate
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             migrate: (persistedState: any, version: number) => {
+                let newState = { ...persistedState };
+
                 // Migration from v0 or v1 to v2
                 if (version < 2) {
                     // Create default spaces
                     const personalSpaceId = 'personal';
                     const familySpaceId = 'family';
-
-                    const newState = { ...persistedState };
 
                     // Initialize spaces in settings if not present
                     if (!newState.settings.spaces) {
@@ -172,7 +201,7 @@ export const useStore = create<AppState>()(
 
                     // Migrate Transactions
                     if (Array.isArray(newState.transactions)) {
-                        newState.transactions = newState.transactions.map((t: any) => ({
+                        newState.transactions = newState.transactions.map((t: Transaction & { profile?: string }) => ({
                             ...t,
                             spaceId: t.profile === 'family' ? familySpaceId : personalSpaceId,
                             profile: undefined // Cleanup old field
@@ -181,7 +210,7 @@ export const useStore = create<AppState>()(
 
                     // Migrate Assets
                     if (Array.isArray(newState.assets)) {
-                        newState.assets = newState.assets.map((a: any) => ({
+                        newState.assets = newState.assets.map((a: Asset & { profile?: string }) => ({
                             ...a,
                             spaceId: a.profile === 'family' ? familySpaceId : personalSpaceId,
                             profile: undefined
@@ -190,16 +219,32 @@ export const useStore = create<AppState>()(
 
                     // Migrate Budgets
                     if (Array.isArray(newState.budgets)) {
-                        newState.budgets = newState.budgets.map((b: any) => ({
+                        newState.budgets = newState.budgets.map((b: Budget & { profile?: string }) => ({
                             ...b,
                             spaceId: b.profile === 'family' ? familySpaceId : personalSpaceId,
                             profile: undefined
                         }));
                     }
-
-                    return newState;
                 }
-                return persistedState;
+
+                // Migration to v3: Ensure investment categories exist
+                if (version < 3) {
+                    if (newState.settings && newState.settings.categories && !newState.settings.categories.investment) {
+                        newState.settings.categories = {
+                            ...newState.settings.categories,
+                            investment: ['Stock', 'Bond', 'Fund certificate', 'Gold', 'Crypto']
+                        };
+                    }
+                }
+
+                // Migration to v4: Add App Name
+                if (version < 4) {
+                    if (!newState.settings.appName) {
+                        newState.settings.appName = 'Personal Wealth';
+                    }
+                }
+
+                return newState;
             }
         }
     )

@@ -124,64 +124,75 @@ export const generateDemoData = () => {
     ];
 
     // --- 2. Detailed Budgets ---
-    const budgets: Budget[] = [
+    // --- 2. Detailed Budgets ---
+    const createBudgetsForYear = (year: number): Budget[] => [
         {
-            id: 'demo-budget-1',
+            id: `demo-budget-housing-${year}`,
             category: 'Housing',
             amount: 624000000, // ~24k USD
             period: 'year',
+            year,
             spaceId,
             subItems: [
-                { id: 'sub-1', name: 'Rent/Mortgage', amount: 468000000 },
-                { id: 'sub-2', name: 'Utilities', amount: 78000000 },
-                { id: 'sub-3', name: 'Maintenance', amount: 78000000 }
+                { id: `sub-1-${year}`, name: 'Rent/Mortgage', amount: 468000000 },
+                { id: `sub-2-${year}`, name: 'Utilities', amount: 78000000 },
+                { id: `sub-3-${year}`, name: 'Maintenance', amount: 78000000 }
             ]
         },
         {
-            id: 'demo-budget-2',
+            id: `demo-budget-food-${year}`,
             category: 'Food',
             amount: 218400000, // ~8.4k USD
             period: 'year',
+            year,
             spaceId,
             subItems: [
-                { id: 'sub-4', name: 'Groceries', amount: 156000000 },
-                { id: 'sub-5', name: 'Dining Out', amount: 62400000 }
+                { id: `sub-4-${year}`, name: 'Groceries', amount: 156000000 },
+                { id: `sub-5-${year}`, name: 'Dining Out', amount: 62400000 }
             ]
         },
         {
-            id: 'demo-budget-3',
+            id: `demo-budget-transport-${year}`,
             category: 'Transportation',
             amount: 156000000, // ~6k USD
             period: 'year',
+            year,
             spaceId,
             subItems: [
-                { id: 'sub-6', name: 'Fuel', amount: 78000000 },
-                { id: 'sub-7', name: 'Car Insurance', amount: 31200000 },
-                { id: 'sub-8', name: 'Services', amount: 46800000 }
+                { id: `sub-6-${year}`, name: 'Fuel', amount: 78000000 },
+                { id: `sub-7-${year}`, name: 'Car Insurance', amount: 31200000 },
+                { id: `sub-8-${year}`, name: 'Services', amount: 46800000 }
             ]
         },
         {
-            id: 'demo-budget-4',
+            id: `demo-budget-entertainment-${year}`,
             category: 'Entertainment',
             amount: 93600000, // ~3.6k USD
             period: 'year',
+            year,
             spaceId,
         },
         {
-            id: 'demo-budget-5',
+            id: `demo-budget-shopping-${year}`,
             category: 'Shopping',
             amount: 124800000, // ~4.8k USD
             period: 'year',
+            year,
             spaceId,
         }
     ];
 
-    // --- 3. Realistic Transactions (1 Year) ---
+    const budgets: Budget[] = [
+        ...createBudgetsForYear(2026),
+        ...createBudgetsForYear(2025)
+    ];
+
+    // --- 3. Realistic Transactions (2 Years covering 2024-2025) ---
     const transactions: Transaction[] = [];
     const categories = ['Food', 'Transportation', 'Housing', 'Entertainment', 'Shopping', 'Health', 'Education', 'Travel'];
 
-    // Monthly Recurring (Salary & Rent) for 12 months
-    for (let i = 0; i < 12; i++) {
+    // Monthly Recurring (Salary & Rent) for 24 months
+    for (let i = 0; i < 24; i++) {
         // Salary (Income) - ~5.5k USD = 143M VND
         transactions.push({
             id: crypto.randomUUID(),
@@ -206,8 +217,8 @@ export const generateDemoData = () => {
     }
 
     // Random Daily Expenses
-    for (let i = 0; i < 150; i++) { // Generate ~150 random transactions
-        const daysAgo = getRandomInt(0, 365);
+    for (let i = 0; i < 400; i++) { // Generate ~400 random transactions over 2 years
+        const daysAgo = getRandomInt(0, 730);
         const category = categories[getRandomInt(0, categories.length - 1)];
         let amount = 0;
         let description = '';
@@ -273,7 +284,22 @@ export const generateDemoData = () => {
         spaceId
     });
 
-    // --- 4. Settings ---
+    // --- 4. Investment Logs ---
+    const investmentLogs: any[] = []; // Using any to avoid import circular dependency if types not updated yet, but ideally use InvestmentLog
+    // Create logs for initial capital
+    assets.filter(a => a.bucket === 'investment' || a.type === 'stock' || a.type === 'crypto' || a.type === 'real_estate').forEach(asset => {
+        // Assume invested amount is slightly less than current value (profit)
+        const investedAmount = Math.floor(asset.value * 0.85);
+        investmentLogs.push({
+            id: crypto.randomUUID(),
+            date: getDate(300), // Bought ~10 months ago
+            amount: investedAmount,
+            note: `Initial Buy: ${asset.name}`,
+            spaceId
+        });
+    });
+
+    // --- 5. Settings ---
     const settings: AppSettings = {
         currency: 'VND',
         theme: 'light',
@@ -285,7 +311,8 @@ export const generateDemoData = () => {
         budgetRules: { enforceUniqueCategory: true },
         categories: {
             expense: ['Food', 'Housing', 'Transportation', 'Entertainment', 'Shopping', 'Health', 'Education', 'Travel', 'Utilities'],
-            income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+            income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'],
+            investment: ['Stock', 'Bond', 'Fund certificate', 'Gold', 'Crypto']
         },
         language: 'en',
         chat: {
@@ -295,5 +322,5 @@ export const generateDemoData = () => {
         }
     };
 
-    return { assets, budgets, transactions, settings, monthlySummaries: [] };
+    return { assets, budgets, transactions, settings, monthlySummaries: [], investmentLogs };
 };

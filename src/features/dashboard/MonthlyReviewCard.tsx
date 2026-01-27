@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { Star, Edit2 } from 'lucide-react';
 
-export function MonthlyReviewCard() {
+interface Props {
+    selectedDate: Date;
+}
+
+export function MonthlyReviewCard({ selectedDate }: Props) {
     const { monthlySummaries, addMonthlySummary, updateMonthlySummary, settings } = useStore();
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
     const activeSpaceId = settings.activeSpace;
 
     const summary = monthlySummaries.find(

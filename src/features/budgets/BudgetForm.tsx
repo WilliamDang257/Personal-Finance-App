@@ -7,9 +7,10 @@ import { X } from 'lucide-react';
 interface BudgetFormProps {
     onClose: () => void;
     initialData?: Budget;
+    year: number;
 }
 
-export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
+export function BudgetForm({ onClose, initialData, year }: BudgetFormProps) {
     const { addBudget, updateBudget, settings, budgets } = useStore();
     const [category, setCategory] = useState('');
     const [amount, setAmount] = useState('');
@@ -31,12 +32,13 @@ export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
         if (settings.budgetRules?.enforceUniqueCategory) {
             const isDuplicate = budgets.some(b =>
                 b.category === category &&
+                b.year === year &&
                 b.spaceId === (initialData ? initialData.spaceId : settings.activeSpace) &&
                 b.id !== (initialData ? initialData.id : '')
             );
 
             if (isDuplicate) {
-                alert('A budget for this category already exists.');
+                alert(`A budget for this category already exists for ${year}.`);
                 return;
             }
         }
@@ -46,6 +48,7 @@ export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
             category,
             amount: parseFloat(amount),
             period: 'year' as const, // Force yearly
+            year,
             spaceId: initialData ? initialData.spaceId : settings.activeSpace,
             subItems: initialData?.subItems || [],
         };
@@ -62,7 +65,7 @@ export function BudgetForm({ onClose, initialData }: BudgetFormProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg sm:w-[400px]">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">{initialData ? 'Edit Budget' : 'Set Budget'}</h3>
+                    <h3 className="text-lg font-semibold">{initialData ? 'Edit Budget' : 'Set Budget'} ({year})</h3>
                     <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
                         <X className="h-5 w-5" />
                     </button>

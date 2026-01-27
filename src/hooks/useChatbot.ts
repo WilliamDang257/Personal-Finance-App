@@ -3,6 +3,7 @@ import { useStore } from './useStore';
 import type { ChatMessage } from '../types';
 import { GeminiService } from '../services/ai/geminiService';
 import { buildSystemPrompt, WELCOME_MESSAGE, ERROR_MESSAGE, NO_API_KEY_MESSAGE } from '../services/ai/promptTemplates';
+import { GEMINI_API_KEYS } from '../config/aiConfig';
 
 export function useChatbot() {
     const {
@@ -21,6 +22,18 @@ export function useChatbot() {
     const activeSpaceId = settings.activeSpace;
     const spaceChatMessages = chatMessages.filter(m => m.spaceId === activeSpaceId);
 
+    const getApiKey = useCallback(() => {
+        if (settings.chat?.apiKey) return settings.chat.apiKey;
+        if (GEMINI_API_KEYS.length > 0) {
+            // Simple random rotation
+            return GEMINI_API_KEYS[Math.floor(Math.random() * GEMINI_API_KEYS.length)];
+        }
+        return null;
+    }, [settings.chat?.apiKey]);
+
+    const apiKey = getApiKey();
+    const hasApiKey = !!apiKey;
+
     const sendMessage = useCallback(async (userMessage: string) => {
         if (!userMessage.trim()) return;
 
@@ -30,7 +43,7 @@ export function useChatbot() {
             return;
         }
 
-        if (!settings.chat?.apiKey) {
+        if (!hasApiKey) {
             // Add system message about missing API key
             const systemMsg: ChatMessage = {
                 id: crypto.randomUUID(),
@@ -69,7 +82,7 @@ export function useChatbot() {
             const conversationHistory = spaceChatMessages.slice(-10);
 
             // Initialize Gemini service
-            const gemini = new GeminiService(settings.chat.apiKey!);
+            const gemini = new GeminiService(apiKey!);
 
             // Send message and get response
             const { text, tokens } = await gemini.sendMessage(
@@ -103,7 +116,7 @@ export function useChatbot() {
         } finally {
             setIsLoading(false);
         }
-    }, [settings, spaceChatMessages, activeSpaceId, addChatMessage, transactions, assets, budgets]);
+    }, [settings, spaceChatMessages, activeSpaceId, addChatMessage, transactions, assets, budgets, hasApiKey, apiKey]);
 
     const clearHistory = useCallback(() => {
         clearChatHistory(activeSpaceId);
@@ -131,6 +144,6 @@ export function useChatbot() {
         clearHistory,
         initializeChat,
         isEnabled: settings.chat?.enabled ?? false,
-        hasApiKey: !!settings.chat?.apiKey
+        hasApiKey
     };
 }

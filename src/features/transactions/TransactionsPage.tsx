@@ -1,43 +1,67 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
+import { useTranslation } from '../../hooks/useTranslation';
 import { TransactionForm } from './TransactionForm';
 import { TransactionSummary } from './TransactionSummary';
-import { Plus, Trash2, Search, Pencil, Filter } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Filter, ArrowLeft, ArrowRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { Transaction } from '../../types';
 
 export function TransactionsPage() {
+    const { t } = useTranslation();
     const { transactions, removeTransaction, settings } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
+    const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
     const [search, setSearch] = useState('');
-    const [activeTab, setActiveTab] = useState<'income' | 'expense' | 'all'>('expense');
+    const [categoryFilter, setCategoryFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount'>('date-desc');
+    const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
 
-    const filteredTransactions = useMemo(() => {
-        const activeSpace = settings.activeSpace;
-
-        return transactions
-            .filter(t => t.spaceId === activeSpace)
-            .filter(t => {
-                if (activeTab === 'all') return true;
-                return t.type === activeTab;
-            })
-            .filter(t =>
-                t.description.toLowerCase().includes(search.toLowerCase()) ||
-                t.category.toLowerCase().includes(search.toLowerCase())
-            )
-            .sort((a, b) => {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return sortBy === 'date-desc' ? dateB - dateA : dateA - dateB;
-            });
-    }, [transactions, search, activeTab, sortBy, settings.activeSpace]);
-
-    const formatter = new Intl.NumberFormat('en-US', {
+    const formatter = new Intl.NumberFormat(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'en-US'), {
         style: 'currency',
         currency: settings.currency,
     });
+
+    // Reset to current month on open if needed, but keeping it simple for now
+    const activeSpace = settings.activeSpace;
+
+    // Filter transactions
+    const filteredTransactions = useMemo(() => {
+        return transactions
+            .filter(t => {
+                if (t.spaceId && t.spaceId !== activeSpace) return false;
+
+                const matchesType = t.type === activeTab;
+
+                const tDate = new Date(t.date);
+                const matchesMonth = tDate.getMonth() === selectedMonth.getMonth() &&
+                    tDate.getFullYear() === selectedMonth.getFullYear();
+
+                const matchesSearch = t.description.toLowerCase().includes(search.toLowerCase()) ||
+                    t.category.toLowerCase().includes(search.toLowerCase());
+
+                const matchesCategory = categoryFilter === 'all' || t.category === categoryFilter;
+
+                return matchesType && matchesMonth && matchesSearch && matchesCategory;
+            })
+            .sort((a, b) => {
+                if (sortBy === 'date-desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
+                if (sortBy === 'date-asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+                if (sortBy === 'amount') return b.amount - a.amount;
+                return 0;
+            });
+    }, [transactions, activeTab, search, categoryFilter, sortBy, selectedMonth, activeSpace]);
+
+    const uniqueCategories = useMemo(() => {
+        const cats = new Set(transactions.filter(t => t.type === activeTab).map(t => t.category));
+        return Array.from(cats);
+    }, [transactions, activeTab]);
+
+    const handleAddNew = () => {
+        setEditingTransaction(undefined);
+        setIsFormOpen(true);
+    };
 
     const handleEdit = (transaction: Transaction) => {
         setEditingTransaction(transaction);
@@ -49,16 +73,11 @@ export function TransactionsPage() {
         setEditingTransaction(undefined);
     };
 
-    const handleAddNew = () => {
-        setEditingTransaction(undefined);
-        setIsFormOpen(true);
-    };
-
     return (
         <div className="p-6 space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Transactions</h2>
-                <p className="text-muted-foreground mt-2">Manage your income and expenses.</p>
+                <h2 className="text-3xl font-bold tracking-tight">{t.transactions.title}</h2>
+                <p className="text-muted-foreground mt-2">{t.transactions.subtitle}</p>
             </div>
 
             {/* Tabs & Actions */}
@@ -74,7 +93,7 @@ export function TransactionsPage() {
                                     : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            Expenses
+                            {t.transactions.expenses}
                         </button>
                         <button
                             onClick={() => setActiveTab('income')}
@@ -85,51 +104,95 @@ export function TransactionsPage() {
                                     : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            Income
+                            {t.transactions.income}
                         </button>
                     </div>
                 </div>
 
                 {/* Summary & Buttons Section */}
                 <div>
-                    <TransactionSummary type={activeTab} />
+                    <TransactionSummary type={activeTab} selectedMonth={selectedMonth} categoryFilter={categoryFilter} />
 
-                    <div className="flex justify-end mt-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4">
+                        {/* Month Picker */}
+                        <div className="flex items-center gap-2 bg-card border rounded-md p-1 shadow-sm">
+                            <button
+                                onClick={() => {
+                                    const d = new Date(selectedMonth);
+                                    d.setMonth(d.getMonth() - 1);
+                                    setSelectedMonth(d);
+                                }}
+                                className="p-2 hover:bg-muted rounded-md transition-colors"
+                                title="Previous Month"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </button>
+                            <span className="min-w-[140px] text-center font-medium">
+                                {selectedMonth.toLocaleString(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'default'), { month: 'long', year: 'numeric' })}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    const d = new Date(selectedMonth);
+                                    d.setMonth(d.getMonth() + 1);
+                                    setSelectedMonth(d);
+                                }}
+                                className="p-2 hover:bg-muted rounded-md transition-colors"
+                                title="Next Month"
+                            >
+                                <ArrowRight className="h-4 w-4" />
+                            </button>
+                        </div>
+
                         <button
                             onClick={handleAddNew}
                             className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'income' ? 'bg-emerald-600' : 'bg-red-600'
                                 }`}
                         >
                             <Plus className="h-4 w-4" />
-                            Add {activeTab === 'income' ? 'Income' : 'Expense'}
+                            {activeTab === 'income' ? t.transactions.addIncome : t.transactions.addExpense}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Search & Filter */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         type="text"
-                        placeholder="Search transactions..."
+                        placeholder={t.transactions.searchPlaceholder}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-4">
+                    {/* Category Filter */}
+                    <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring max-w-[150px]"
+                        >
+                            <option value="all">{t.transactions.allCategories}</option>
+                            {uniqueCategories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Sort */}
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
+                        onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'amount')}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     >
-                        <option value="date-desc">Newest First</option>
-                        <option value="date-asc">Oldest First</option>
-                        <option value="amount">Sort by Amount</option>
+                        <option value="date-desc">{t.transactions.newestFirst}</option>
+                        <option value="date-asc">{t.transactions.oldestFirst}</option>
+                        <option value="amount">{t.transactions.sortByAmount}</option>
                     </select>
                 </div>
             </div>
@@ -141,19 +204,19 @@ export function TransactionsPage() {
                         <thead className="border-b bg-muted/50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Date
+                                    {t.transactions.date}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Description
+                                    {t.transactions.description}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Category
+                                    {t.transactions.category}
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Amount
+                                    {t.transactions.amount}
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Actions
+                                    {t.transactions.actions}
                                 </th>
                             </tr>
                         </thead>
@@ -161,7 +224,7 @@ export function TransactionsPage() {
                             {filteredTransactions.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                                        No {activeTab === 'income' ? 'income' : 'expense'} transactions found.
+                                        {t.transactions.noTransactions} {selectedMonth.toLocaleString(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'default'), { month: 'long' })}.
                                     </td>
                                 </tr>
                             ) : (

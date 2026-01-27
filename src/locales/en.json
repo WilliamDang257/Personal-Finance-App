@@ -1,4 +1,7 @@
 {
+    "app": {
+        "title": "Personal Wealth"
+    },
     "settings": {
         "title": "Settings",
         "subtitle": "Manage your preferences and data.",
@@ -42,13 +45,72 @@
         "subtitle": "Strategic overview of your financial health."
     },
     "transactions": {
-        "title": "Transactions"
+        "title": "Transactions",
+        "subtitle": "Manage your income and expenses.",
+        "expenses": "Expenses",
+        "income": "Income",
+        "addIncome": "Add Income",
+        "addExpense": "Add Expense",
+        "searchPlaceholder": "Search transactions...",
+        "allCategories": "All Categories",
+        "newestFirst": "Newest First",
+        "oldestFirst": "Oldest First",
+        "sortByAmount": "Sort by Amount",
+        "date": "Date",
+        "description": "Description",
+        "category": "Category",
+        "amount": "Amount",
+        "actions": "Actions",
+        "noTransactions": "No transactions found for"
     },
     "budgets": {
-        "title": "Budgets"
+        "title": "Budgets",
+        "subtitle": "Manage your monthly spending limits.",
+        "monthlyLimits": "Monthly Budget Limits",
+        "spent": "Spent",
+        "remaining": "Remaining",
+        "resetMonthly": "Resets monthly",
+        "totalYearlyBudget": "Total Yearly Budget",
+        "addCategory": "Add Category",
+        "addItem": "Add Item",
+        "noBudgets": "No budgets set yet. Create one to track your spending!",
+        "allocated": "Allocated",
+        "breakdown": "Breakdown"
     },
     "assets": {
+        "title": "Assets",
+        "subtitle": "Manage your assets and liabilities.",
+        "cashAssets": "Cash Assets",
+        "liabilities": "Liabilities",
+        "cashSubtitle": "Track your cash, savings, and receivables.",
+        "liabilitiesSubtitle": "Manage your debts, loans, and other obligations.",
+        "netWorth": "Net Worth",
+        "totalCashAssets": "Total Cash Assets",
+        "totalLiabilities": "Total Liabilities",
+        "cash": "Cash",
+        "receivables": "Receivables",
+        "cashEquivalents": "Cash & Equivalents",
+        "debtsPayables": "Debts & Payables",
+        "noItems": "No items in this section.",
+        "total": "Total",
+        "addAsset": "Add Asset",
+        "addItem": "Add Item",
         "equity": "Equity",
-        "liabilities": "Liabilities"
+        "totalEquity": "Total Equity"
+    },
+    "investments": {
+        "title": "Investments",
+        "subtitle": "Track your investment portfolio performance.",
+        "marketData": "Market Data",
+        "totalValue": "Total Value",
+        "netInvested": "Net Invested",
+        "profitLoss": "Profit/Loss",
+        "growthRate": "Growth Rate",
+        "allocation": "Asset Allocation",
+        "capitalHistory": "Capital History",
+        "investmentDeposit": "Investment Deposit",
+        "noHistory": "No investment history available.",
+        "currentHoldings": "Current Holdings",
+        "noAssets": "No investment assets found."
     }
 }

@@ -4,15 +4,28 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-export function CategoryBreakdown() {
+interface Props {
+    selectedDate: Date;
+    viewMode: 'month' | 'year';
+}
+
+export function CategoryBreakdown({ selectedDate, viewMode }: Props) {
     const { transactions, settings } = useStore();
 
     const data = useMemo(() => {
         const activeSpace = settings.activeSpace;
+        const targetMonth = selectedDate.getMonth();
+        const targetYear = selectedDate.getFullYear();
 
         const expenseTransactions = transactions.filter(
-            t => t.type === 'expense' && t.spaceId === activeSpace
-            // && new Date(t.date).getMonth() === currentMonth // Optional: Limit to current month?
+            t => {
+                const d = new Date(t.date);
+                const matchesSpace = t.type === 'expense' && t.spaceId === activeSpace;
+                const matchesYear = d.getFullYear() === targetYear;
+                const matchesMonth = viewMode === 'month' ? d.getMonth() === targetMonth : true;
+
+                return matchesSpace && matchesYear && matchesMonth;
+            }
         );
 
         const byCategory = expenseTransactions.reduce((acc, t) => {
@@ -24,7 +37,7 @@ export function CategoryBreakdown() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5); // Top 5
-    }, [transactions, settings.activeSpace]);
+    }, [transactions, settings.activeSpace, selectedDate, viewMode]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',

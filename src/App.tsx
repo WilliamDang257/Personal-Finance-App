@@ -1,28 +1,41 @@
 
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
-import { DashboardPage } from './features/dashboard/DashboardPage';
-import { TransactionsPage } from './features/transactions/TransactionsPage';
 
-import { AssetsPage } from './features/assets/AssetsPage';
-import { BudgetsPage } from './features/budgets/BudgetsPage';
-import { SettingsPage } from './features/settings/SettingsPage';
+const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').then(module => ({ default: module.DashboardPage })));
+const TransactionsPage = lazy(() => import('./features/transactions/TransactionsPage').then(module => ({ default: module.TransactionsPage })));
+const AssetsPage = lazy(() => import('./features/assets/AssetsPage').then(module => ({ default: module.AssetsPage })));
+const BudgetsPage = lazy(() => import('./features/budgets/BudgetsPage').then(module => ({ default: module.BudgetsPage })));
+const InvestmentsPage = lazy(() => import('./features/investments/InvestmentsPage').then(module => ({ default: module.InvestmentsPage })));
+const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then(module => ({ default: module.SettingsPage })));
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="transactions" element={<TransactionsPage />} />
-          <Route path="assets/equity" element={<AssetsPage mode="equity" />} />
-          <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
-          <Route path="assets" element={<Navigate to="assets/equity" replace />} />
-          <Route path="budgets" element={<BudgetsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="investments" element={<InvestmentsPage />} />
+            <Route path="assets/equity" element={<AssetsPage mode="equity" />} />
+            <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
+            <Route path="assets" element={<Navigate to="assets/equity" replace />} />
+            <Route path="budgets" element={<BudgetsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

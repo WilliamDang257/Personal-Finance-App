@@ -5,21 +5,25 @@ import { useMemo } from 'react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a855f7', '#ec4899', '#6366f1', '#ef4444', '#14b8a6', '#f97316'];
 
-export function BudgetDistributionChart() {
+interface BudgetDistributionChartProps {
+    year: number;
+}
+
+export function BudgetDistributionChart({ year }: BudgetDistributionChartProps) {
     const { budgets, settings } = useStore();
 
     const data = useMemo(() => {
         const activeSpace = settings.activeSpace;
 
         return budgets
-            .filter(b => b.spaceId === activeSpace && b.amount > 0)
+            .filter(b => b.spaceId === activeSpace && b.amount > 0 && b.year === year)
             .map(b => ({
                 name: b.category,
                 value: b.amount,
                 period: b.period
             }))
             .sort((a, b) => b.value - a.value);
-    }, [budgets, settings.activeSpace]);
+    }, [budgets, settings.activeSpace, year]);
 
     const totalValue = useMemo(() => {
         return data.reduce((acc, curr) => acc + curr.value, 0);
@@ -54,6 +58,7 @@ export function BudgetDistributionChart() {
                             fill="#8884d8"
                             paddingAngle={5}
                             dataKey="value"
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             label={({ name, percent }: any) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                         >
                             {data.map((_entry, index) => (
@@ -61,6 +66,7 @@ export function BudgetDistributionChart() {
                             ))}
                         </Pie>
                         <Tooltip
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             formatter={(value: any) => {
                                 if (value === undefined || value === null) return ['0', 'Budget'];
                                 const numValue = Number(value);

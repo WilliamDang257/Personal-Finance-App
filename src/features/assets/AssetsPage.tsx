@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
+import { useTranslation } from '../../hooks/useTranslation';
 import { AssetForm } from './AssetForm';
 
-import { Plus, Trash2, Wallet, TrendingUp, Pencil, Landmark, Briefcase, MinusCircle, PlusCircle, Building2, Coins, CreditCard, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Wallet, TrendingUp, Pencil, Landmark, Briefcase, MinusCircle, PlusCircle, Building2, Coins, CreditCard } from 'lucide-react';
 import type { Asset, AssetType } from '../../types';
 
 type AssetGroup = 'equity' | 'liabilities';
@@ -12,6 +13,7 @@ interface AssetsPageProps {
 }
 
 export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
+    const { t } = useTranslation();
     const { assets, removeAsset, settings } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<Asset | undefined>(undefined);
@@ -24,7 +26,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
     const [formFixedType, setFormFixedType] = useState<AssetType | undefined>(undefined);
 
 
-    const formatter = new Intl.NumberFormat('en-US', {
+    const formatter = new Intl.NumberFormat(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'en-US'), {
         style: 'currency',
         currency: settings.currency,
         maximumFractionDigits: 0
@@ -97,16 +99,9 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
         return { totalEquity, totalLiabilities, netWorth: totalEquity - totalLiabilities, totalCash, totalInvestment, totalReceivable };
     }, [sections]);
 
-    // Handlers for Add Buttons
     const handleAddCash = () => {
         setFormMode('simple');
         setFormFixedType('Cash');
-        setIsFormOpen(true);
-    };
-
-    const handleAddInvestment = () => {
-        setFormMode('default');
-        setFormFixedType('Stock');
         setIsFormOpen(true);
     };
 
@@ -133,7 +128,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                     <button
                         onClick={onAdd}
                         className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                        title="Add Item"
+                        title={t.assets.addItem}
                     >
                         <Plus className="h-4 w-4" />
                     </button>
@@ -143,7 +138,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
             <div className="divide-y border rounded-xl bg-card overflow-hidden">
                 {items.length === 0 && (
                     <div className="p-8 text-center text-sm text-muted-foreground bg-muted/5">
-                        No items in this section.
+                        {t.assets.noItems}
                     </div>
                 )}
                 {items.map((asset) => {
@@ -173,7 +168,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
 
                             <div className="flex items-center gap-6 text-right">
                                 <div>
-                                    <div className={`font-mono font-medium ${classifyAsset(asset) === 'liabilities' ? 'text-red-600' : 'text-foreground'}`}>
+                                    <div className={`font-medium ${classifyAsset(asset) === 'liabilities' ? 'text-red-600' : 'text-foreground'}`}>
                                         {formatter.format(asset.value)}
                                     </div>
                                 </div>
@@ -199,7 +194,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
             {items.length > 0 && (
                 <div className="flex justify-end px-4">
                     <p className="text-xs font-medium text-muted-foreground">
-                        Total: <span className="text-foreground ml-1">{formatter.format(total)}</span>
+                        {t.assets.total}: <span className="text-foreground ml-1">{formatter.format(total)}</span>
                     </p>
                 </div>
             )}
@@ -212,26 +207,13 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">
-                            {mode === 'equity' ? 'Equity Assets' : 'Liabilities'}
+                            {mode === 'equity' ? t.assets.cashAssets : t.assets.liabilities}
                         </h2>
                         <p className="text-sm text-muted-foreground">
                             {mode === 'equity'
-                                ? 'Track your cash, investments, and receivables.'
-                                : 'Manage your debts, loans, and other obligations.'}
+                                ? t.assets.cashSubtitle
+                                : t.assets.liabilitiesSubtitle}
                         </p>
-                    </div>
-                    {/* External Link */}
-                    <div>
-                        <a
-                            href="https://banggia.dnse.com.vn/vn30"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border bg-background hover:bg-muted text-foreground transition-all"
-                            title="Open DNSE Price Board"
-                        >
-                            <ExternalLink className="h-4 w-4 text-blue-600" />
-                            <span className="hidden sm:inline">VN30 Board</span>
-                        </a>
                     </div>
                 </div>
 
@@ -241,7 +223,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                     <div className="rounded-xl border bg-card p-5 shadow-sm">
                         <div className="flex items-center gap-2 text-muted-foreground mb-2">
                             <Wallet className="h-4 w-4" />
-                            <span className="text-xs font-medium uppercase tracking-wider">Net Worth</span>
+                            <span className="text-xs font-medium uppercase tracking-wider">{t.assets.netWorth}</span>
                         </div>
                         <div className="text-2xl font-bold text-foreground">
                             {formatter.format(stats.netWorth)}
@@ -253,20 +235,20 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                             <div className="rounded-xl border bg-card p-5 shadow-sm">
                                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
                                     <TrendingUp className="h-4 w-4" />
-                                    <span className="text-xs font-medium uppercase tracking-wider">Total Assets</span>
+                                    <span className="text-xs font-medium uppercase tracking-wider">{t.assets.totalCashAssets}</span>
                                 </div>
                                 <div className="text-2xl font-bold text-emerald-600">
-                                    {formatter.format(stats.totalEquity)}
+                                    {formatter.format(stats.totalCash + stats.totalReceivable)}
                                 </div>
                             </div>
                             <div className="rounded-xl border bg-card/50 p-5 border-dashed flex flex-col justify-center">
                                 <div className="flex justify-between items-center text-sm mb-1">
-                                    <span className="text-muted-foreground">Cash</span>
+                                    <span className="text-muted-foreground">{t.assets.cash}</span>
                                     <span className="font-medium">{formatter.format(stats.totalCash)}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Invested</span>
-                                    <span className="font-medium">{formatter.format(stats.totalInvestment)}</span>
+                                    <span className="text-muted-foreground">{t.assets.receivables}</span>
+                                    <span className="font-medium">{formatter.format(stats.totalReceivable)}</span>
                                 </div>
                             </div>
                         </>
@@ -274,7 +256,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                         <div className="rounded-xl border bg-card p-5 shadow-sm">
                             <div className="flex items-center gap-2 text-muted-foreground mb-2">
                                 <MinusCircle className="h-4 w-4" />
-                                <span className="text-xs font-medium uppercase tracking-wider">Total Liabilities</span>
+                                <span className="text-xs font-medium uppercase tracking-wider">{t.assets.totalLiabilities}</span>
                             </div>
                             <div className="text-2xl font-bold text-red-600">
                                 {formatter.format(stats.totalLiabilities)}
@@ -287,12 +269,12 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
             <div className="space-y-10">
                 {activeGroup === 'equity' ? (
                     <>
-                        {renderAssetList('Cash & Equivalents', sections.cash, stats.totalCash, handleAddCash)}
-                        {renderAssetList('Investments', sections.investment, stats.totalInvestment, handleAddInvestment)}
-                        {renderAssetList('Receivables', sections.receivable, stats.totalReceivable, handleAddReceivable)}
+                        {renderAssetList(t.assets.cashEquivalents, sections.cash, stats.totalCash, handleAddCash)}
+                        {/* Investments moved to dedicated tab */}
+                        {renderAssetList(t.assets.receivables, sections.receivable, stats.totalReceivable, handleAddReceivable)}
                     </>
                 ) : (
-                    renderAssetList('Debts & Payables', sections.liabilities, stats.totalLiabilities, handleAddLiability)
+                    renderAssetList(t.assets.debtsPayables, sections.liabilities, stats.totalLiabilities, handleAddLiability)
                 )}
             </div>
 

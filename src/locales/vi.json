@@ -1,4 +1,7 @@
 {
+    "app": {
+        "title": "Tài sản Cá nhân"
+    },
     "settings": {
         "title": "Cài đặt",
         "subtitle": "Quản lý tùy chọn và dữ liệu của bạn.",
@@ -42,13 +45,72 @@
         "subtitle": "Tổng quan chiến lược về tình hình tài chính của bạn."
     },
     "transactions": {
-        "title": "Giao dịch"
+        "title": "Giao dịch",
+        "subtitle": "Quản lý thu nhập và chi tiêu của bạn.",
+        "expenses": "Chi tiêu",
+        "income": "Thu nhập",
+        "addIncome": "Thêm Thu nhập",
+        "addExpense": "Thêm Chi tiêu",
+        "searchPlaceholder": "Tìm kiếm giao dịch...",
+        "allCategories": "Tất cả danh mục",
+        "newestFirst": "Mới nhất trước",
+        "oldestFirst": "Cũ nhất trước",
+        "sortByAmount": "Sắp xếp theo số tiền",
+        "date": "Ngày",
+        "description": "Mô tả",
+        "category": "Danh mục",
+        "amount": "Số tiền",
+        "actions": "Hành động",
+        "noTransactions": "Không tìm thấy giao dịch cho"
     },
     "budgets": {
-        "title": "Ngân sách"
+        "title": "Ngân sách",
+        "subtitle": "Quản lý giới hạn chi tiêu hàng tháng.",
+        "monthlyLimits": "Giới hạn ngân sách tháng",
+        "spent": "Đã chi",
+        "remaining": "Còn lại",
+        "resetMonthly": "Đặt lại hàng tháng",
+        "totalYearlyBudget": "Tổng ngân sách năm",
+        "addCategory": "Thêm Danh mục",
+        "addItem": "Thêm Mục",
+        "noBudgets": "Chưa có ngân sách. Tạo mới để theo dõi chi tiêu!",
+        "allocated": "Đã phân bổ",
+        "breakdown": "Chi tiết"
     },
     "assets": {
+        "title": "Tài sản",
+        "subtitle": "Quản lý tài sản và nợ phải trả.",
+        "cashAssets": "Tài sản tiền mặt",
+        "liabilities": "Nợ phải trả",
+        "cashSubtitle": "Theo dõi tiền mặt, tiền tiết kiệm và các khoản phải thu.",
+        "liabilitiesSubtitle": "Quản lý các khoản nợ, khoản vay và nghĩa vụ tài chính.",
+        "netWorth": "Giá trị ròng",
+        "totalCashAssets": "Tổng tài sản tiền mặt",
+        "totalLiabilities": "Tổng nợ phải trả",
+        "cash": "Tiền mặt",
+        "receivables": "Phải thu",
+        "cashEquivalents": "Tiền mặt & Tương đương",
+        "debtsPayables": "Nợ & Phải trả",
+        "noItems": "Không có mục nào trong phần này.",
+        "total": "Tổng",
+        "addAsset": "Thêm Tài sản",
+        "addItem": "Thêm Mục",
         "equity": "Vốn chủ sở hữu",
-        "liabilities": "Nợ phải trả"
+        "totalEquity": "Tổng Vốn"
+    },
+    "investments": {
+        "title": "Đầu tư",
+        "subtitle": "Theo dõi hiệu suất danh mục đầu tư.",
+        "marketData": "Dữ liệu Thị trường",
+        "totalValue": "Tổng Giá trị",
+        "netInvested": "Vốn Đầu tư Ròng",
+        "profitLoss": "Lợi nhuận/Lỗ",
+        "growthRate": "Tỉ lệ Tăng trưởng",
+        "allocation": "Phân bổ Tài sản",
+        "capitalHistory": "Lịch sử Vốn",
+        "investmentDeposit": "Nạp tiền đầu tư",
+        "noHistory": "Chưa có lịch sử đầu tư.",
+        "currentHoldings": "Danh mục Hiện tại",
+        "noAssets": "Chưa có tài sản đầu tư."
     }
 }

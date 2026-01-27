@@ -4,13 +4,28 @@ import { cn } from '../../lib/utils';
 import { ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 
-export function RecentTransactions() {
+interface Props {
+    selectedDate?: Date;
+    viewMode?: 'month' | 'year';
+}
+
+export function RecentTransactions({ selectedDate, viewMode = 'month' }: Props) {
     const { transactions, settings } = useStore();
 
     // Sort by date desc and take top 5
     const activeSpace = settings.activeSpace;
     const recentTransactions = [...transactions]
-        .filter(t => t.spaceId === activeSpace)
+        .filter(t => {
+            if (t.spaceId !== activeSpace) return false;
+            // Filter by date if provided
+            if (selectedDate) {
+                const d = new Date(t.date);
+                const matchesYear = d.getFullYear() === selectedDate.getFullYear();
+                const matchesMonth = viewMode === 'month' ? d.getMonth() === selectedDate.getMonth() : true;
+                return matchesYear && matchesMonth;
+            }
+            return true;
+        })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 

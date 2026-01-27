@@ -1,10 +1,13 @@
 import { generateDemoData } from '../../data/demoData';
 import { useStore } from '../../hooks/useStore';
+import { useTranslation } from '../../hooks/useTranslation';
+import { hasEmbeddedKeys } from '../../config/aiConfig';
+import type { AppSettings } from '../../types';
 import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart } from 'lucide-react';
 import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
 
 export function SettingsPage() {
+    const { t } = useTranslation();
     const { settings, updateSettings, transactions, assets, budgets, addTransaction, addAsset, importData, addSpace, updateSpace, removeSpace } = useStore();
     const [importStatus, setImportStatus] = useState<string>('');
     const [excelImportStatus, setExcelImportStatus] = useState<string>('');
@@ -25,6 +28,8 @@ export function SettingsPage() {
             assets,
             budgets,
             settings,
+            monthlySummaries: useStore.getState().monthlySummaries,
+            chatMessages: useStore.getState().chatMessages,
             exportDate: new Date().toISOString(),
             version: '1.0'
         };
@@ -39,7 +44,8 @@ export function SettingsPage() {
         URL.revokeObjectURL(url);
     };
 
-    const handleExcelExport = () => {
+    const handleExcelExport = async () => {
+        const XLSX = await import('xlsx');
         const workbook = XLSX.utils.book_new();
 
         // 1. Transactions Sheet
@@ -103,6 +109,8 @@ export function SettingsPage() {
                         assets: json.assets || [],
                         budgets: json.budgets || [],
                         monthlySummaries: json.monthlySummaries || [],
+                        chatMessages: json.chatMessages || [],
+                        investmentLogs: json.investmentLogs || [],
                         settings: json.settings || settings // fallback to current settings if missing
                     });
 
@@ -129,18 +137,20 @@ export function SettingsPage() {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
+                const XLSX = await import('xlsx');
                 const data = new Uint8Array(event.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
 
-                let importedCount = { transactions: 0, assets: 0 };
+                const importedCount = { transactions: 0, assets: 0 };
 
                 // Process Income sheet
                 if (workbook.SheetNames.includes('Income')) {
                     const incomeSheet = workbook.Sheets['Income'];
                     const incomeData = XLSX.utils.sheet_to_json(incomeSheet);
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     incomeData.forEach((row: any) => {
                         if (row['Date'] && row['Amount']) {
                             addTransaction({
@@ -162,6 +172,7 @@ export function SettingsPage() {
                     const expenseSheet = workbook.Sheets['Expense'];
                     const expenseData = XLSX.utils.sheet_to_json(expenseSheet);
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     expenseData.forEach((row: any) => {
                         if (row['Date'] && row['Amount']) {
                             addTransaction({
@@ -183,6 +194,7 @@ export function SettingsPage() {
                     const assetSheet = workbook.Sheets['Asset'];
                     const assetData = XLSX.utils.sheet_to_json(assetSheet);
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     assetData.forEach((row: any) => {
                         if (row['Name'] && row['Value']) {
                             const type = mapAssetType(row['Type']);
@@ -212,7 +224,7 @@ export function SettingsPage() {
         reader.readAsArrayBuffer(file);
     };
 
-    const excelDateToISOString = (excelDate: any): string => {
+    const excelDateToISOString = (excelDate: unknown): string => {
         if (typeof excelDate === 'number') {
             const date = new Date((excelDate - 25569) * 86400 * 1000);
             return date.toISOString().split('T')[0];
@@ -220,13 +232,16 @@ export function SettingsPage() {
         if (excelDate instanceof Date) {
             return excelDate.toISOString().split('T')[0];
         }
-        const parsed = new Date(excelDate);
-        if (!isNaN(parsed.getTime())) {
-            return parsed.toISOString().split('T')[0];
+        if (typeof excelDate === 'string' || typeof excelDate === 'number' || excelDate instanceof Date) {
+            const parsed = new Date(excelDate);
+            if (!isNaN(parsed.getTime())) {
+                return parsed.toISOString().split('T')[0];
+            }
         }
         return new Date().toISOString().split('T')[0];
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapAssetType = (type: any): any => {
         if (!type) return 'other';
         const typeStr = type.toString().toLowerCase();
@@ -260,8 +275,8 @@ export function SettingsPage() {
     return (
         <div className="p-6 space-y-8">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-                <p className="text-muted-foreground mt-2">Manage your preferences and data.</p>
+                <h2 className="text-3xl font-bold tracking-tight">{t.settings.title}</h2>
+                <p className="text-muted-foreground mt-2">{t.settings.subtitle}</p>
             </div>
 
             <SpaceManagement
@@ -277,11 +292,32 @@ export function SettingsPage() {
                     <div className="rounded-xl border bg-card p-6 shadow-sm">
                         <h3 className="font-semibold mb-4 flex items-center gap-2">
                             <Save className="h-4 w-4" />
-                            General Configuration
+                            {t.settings.general}
                         </h3>
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Currency</label>
+                                <label className="text-sm font-medium">App Name</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={settings.appName || ''}
+                                        onChange={(e) => updateSettings({ appName: e.target.value })}
+                                        placeholder="Personal Wealth"
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                    <button
+                                        onClick={() => updateSettings({ appName: 'Personal Wealth' })}
+                                        className="p-2 rounded-md border hover:bg-muted text-muted-foreground"
+                                        title="Reset to Default"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Customize the application name in the sidebar.</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">{t.settings.currency}</label>
                                 <select
                                     value={settings.currency}
                                     onChange={handleCurrencyChange}
@@ -294,11 +330,11 @@ export function SettingsPage() {
                                     <option value="VND">VND (₫)</option>
                                     <option value="CNY">CNY (¥)</option>
                                 </select>
-                                <p className="text-xs text-muted-foreground">Select your primary currency for display.</p>
+                                <p className="text-xs text-muted-foreground">{t.settings.currencyDesc}</p>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Language</label>
+                                <label className="text-sm font-medium">{t.settings.language}</label>
                                 <select
                                     value={settings.language || 'en'}
                                     onChange={(e) => updateSettings({ language: e.target.value as 'en' | 'vi' | 'ko' })}
@@ -308,11 +344,11 @@ export function SettingsPage() {
                                     <option value="vi">Tiếng Việt</option>
                                     <option value="ko">한국어</option>
                                 </select>
-                                <p className="text-xs text-muted-foreground">Select your preferred language.</p>
+                                <p className="text-xs text-muted-foreground">{t.settings.languageDesc}</p>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium block">Theme</label>
+                                <label className="text-sm font-medium block">{t.settings.theme}</label>
                                 <div className="flex gap-2 p-1 bg-muted rounded-lg inline-flex">
                                     <button
                                         onClick={() => handleThemeChange('light')}
@@ -363,13 +399,13 @@ export function SettingsPage() {
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
                         <Save className="h-4 w-4" />
-                        Budget Rules
+                        {t.settings.budgetRules}
                     </h3>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                                <label className="text-sm font-medium">Enforce Unique Categories</label>
-                                <p className="text-xs text-muted-foreground">Prevent creating multiple budgets for the same category within a profile.</p>
+                                <label className="text-sm font-medium">{t.settings.enforceUnique}</label>
+                                <p className="text-xs text-muted-foreground">{t.settings.enforceUniqueDesc}</p>
                             </div>
                             <button
                                 role="switch"
@@ -428,41 +464,55 @@ export function SettingsPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Gemini API Key</label>
-                            <input
-                                type="password"
-                                value={settings.chat?.apiKey || ''}
-                                onChange={(e) => {
-                                    let cleanKey = e.target.value.trim();
-                                    // Try to extract key if user pasted a curl command or header
-                                    const match = cleanKey.match(/AIza[0-9A-Za-z-_]{35}/);
-                                    if (match) {
-                                        cleanKey = match[0];
-                                    }
+                            {hasEmbeddedKeys ? (
+                                <div className="p-3 bg-muted rounded-md border border-input">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                        <span className="text-sm font-medium">Managed by Application</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        API access is pre-configured. No action needed.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <input
+                                        type="password"
+                                        value={settings.chat?.apiKey || ''}
+                                        onChange={(e) => {
+                                            let cleanKey = e.target.value.trim();
+                                            // Try to extract key if user pasted a curl command or header
+                                            const match = cleanKey.match(/AIza[0-9A-Za-z-_]{35}/);
+                                            if (match) {
+                                                cleanKey = match[0];
+                                            }
 
-                                    updateSettings({
-                                        chat: {
-                                            ...settings.chat,
-                                            enabled: settings.chat?.enabled ?? false,
-                                            provider: 'gemini',
-                                            apiKey: cleanKey,
-                                            enableProactive: settings.chat?.enableProactive ?? false
-                                        }
-                                    });
-                                }}
-                                placeholder="Enter your Gemini API key..."
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Get a free API key at:{' '}
-                                <a
-                                    href="https://makersuite.google.com/app/apikey"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Google AI Studio
-                                </a>
-                            </p>
+                                            updateSettings({
+                                                chat: {
+                                                    ...settings.chat,
+                                                    enabled: settings.chat?.enabled ?? false,
+                                                    provider: 'gemini',
+                                                    apiKey: cleanKey,
+                                                    enableProactive: settings.chat?.enableProactive ?? false
+                                                }
+                                            });
+                                        }}
+                                        placeholder="Enter your Gemini API key..."
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Get a free API key at:{' '}
+                                        <a
+                                            href="https://makersuite.google.com/app/apikey"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline"
+                                        >
+                                            Google AI Studio
+                                        </a>
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
@@ -479,26 +529,29 @@ export function SettingsPage() {
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
                         <Save className="h-4 w-4" />
-                        Demo Mode
+                        {t.settings.demoMode}
                     </h3>
                     <div className="space-y-4">
                         <div className="flex flex-col gap-2">
                             <p className="text-sm text-muted-foreground">
-                                Populate the application with sample data (Transactions, Assets, Budgets) to explore the features.
+                                {t.settings.demoModeDesc}
                                 <br />
-                                <span className="font-bold text-destructive">Warning: This will overwrite your current data!</span>
+                                <span className="font-bold text-destructive">{t.settings.demoModeWarning}</span>
                             </p>
                             <button
                                 onClick={() => {
-                                    if (window.confirm('Are you sure? This will replace all your current data with demo data.')) {
-                                        importData(generateDemoData());
+                                    if (window.confirm(t.settings.demoModeWarning)) {
+                                        importData({
+                                            ...generateDemoData(),
+                                            chatMessages: []
+                                        });
                                         alert('Demo data loaded!');
                                     }
                                 }}
                                 className="inline-flex items-center justify-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 transition-colors w-fit"
                             >
                                 <Database className="h-4 w-4" />
-                                Load Demo Data
+                                {t.settings.loadDemoData}
                             </button>
                         </div>
                     </div>
@@ -507,7 +560,7 @@ export function SettingsPage() {
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
                     <h3 className="font-semibold mb-4 flex items-center gap-2">
                         <Save className="h-4 w-4" />
-                        Data Management
+                        {t.settings.dataManagement}
                     </h3>
                     <div className="space-y-4">
                         <div className="flex flex-col gap-2">
@@ -516,9 +569,9 @@ export function SettingsPage() {
                                 className="flex items-center justify-center gap-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
                             >
                                 <Download className="h-4 w-4" />
-                                Export Data (JSON)
+                                {t.settings.exportJSON}
                             </button>
-                            <p className="text-xs text-muted-foreground">Download a backup of all your transactions, assets, and settings.</p>
+                            <p className="text-xs text-muted-foreground">{t.settings.exportJSONDesc}</p>
                         </div>
 
                         <div className="flex flex-col gap-2 border-t pt-4">
@@ -527,9 +580,9 @@ export function SettingsPage() {
                                 className="flex items-center justify-center gap-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
                             >
                                 <FileSpreadsheet className="h-4 w-4" />
-                                Export to Excel
+                                {t.settings.exportExcel}
                             </button>
-                            <p className="text-xs text-muted-foreground">Export data to Excel for external analysis (Personal & Family).</p>
+                            <p className="text-xs text-muted-foreground">{t.settings.exportExcelDesc}</p>
                         </div>
 
                         <div className="flex flex-col gap-2 border-t pt-4">
@@ -545,10 +598,10 @@ export function SettingsPage() {
                                 className="flex items-center justify-center gap-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
                             >
                                 <Upload className="h-4 w-4" />
-                                Import Data (JSON)
+                                {t.settings.importJSON}
                             </button>
                             {importStatus && <p className="text-xs font-medium text-green-600 text-center">{importStatus}</p>}
-                            <p className="text-xs text-muted-foreground">Restore from a backup file.</p>
+                            <p className="text-xs text-muted-foreground">{t.settings.importJSONDesc}</p>
                         </div>
 
                         <div className="flex flex-col gap-2 border-t pt-4">
@@ -564,10 +617,10 @@ export function SettingsPage() {
                                 className="flex items-center justify-center gap-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
                             >
                                 <FileSpreadsheet className="h-4 w-4" />
-                                Import from Excel
+                                {t.settings.importExcel}
                             </button>
                             {excelImportStatus && <p className="text-xs font-medium text-green-600 text-center">{excelImportStatus}</p>}
-                            <p className="text-xs text-muted-foreground">Import transactions and assets from your Excel file (Income, Expense, Asset sheets).</p>
+                            <p className="text-xs text-muted-foreground">{t.settings.importExcelDesc}</p>
                         </div>
 
                         <div className="border-t pt-4">
@@ -581,9 +634,9 @@ export function SettingsPage() {
                                 }}
                             >
                                 <Trash2 className="h-4 w-4" />
-                                Reset All Data
+                                {t.settings.resetAllData}
                             </button>
-                            <p className="text-xs text-muted-foreground mt-2 text-center">Caution: This action cannot be undone.</p>
+                            <p className="text-xs text-muted-foreground mt-2 text-center">{t.settings.resetWarning}</p>
                         </div>
                     </div>
                 </div>
@@ -592,11 +645,14 @@ export function SettingsPage() {
     );
 }
 
-function CategoryManagement({ settings, updateSettings }: { settings: any, updateSettings: any }) {
+function CategoryManagement({ settings, updateSettings }: { settings: AppSettings, updateSettings: (s: Partial<AppSettings>) => void }) {
+    const { t } = useTranslation();
     const [newExpense, setNewExpense] = useState('');
     const [newIncome, setNewIncome] = useState('');
 
-    const addCategory = (type: 'expense' | 'income', value: string, setter: (v: string) => void) => {
+    const [newInvestment, setNewInvestment] = useState('');
+
+    const addCategory = (type: 'expense' | 'income' | 'investment', value: string, setter: (v: string) => void) => {
         if (!value.trim()) return;
         const currentList = settings.categories?.[type] || [];
         if (currentList.includes(value.trim())) return;
@@ -610,7 +666,7 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
         setter('');
     };
 
-    const removeCategory = (type: 'expense' | 'income', value: string) => {
+    const removeCategory = (type: 'expense' | 'income' | 'investment', value: string) => {
         const currentList = settings.categories?.[type] || [];
         updateSettings({
             categories: {
@@ -625,12 +681,12 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
             <div className="rounded-xl border bg-card p-6 shadow-sm">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <Save className="h-4 w-4" />
-                    Category Management
+                    {t.settings.categoryManagement}
                 </h3>
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-3 gap-8">
                     {/* Expense Categories */}
                     <div className="space-y-4">
-                        <label className="text-sm font-medium">Expense Categories</label>
+                        <label className="text-sm font-medium">{t.settings.expenseCategories}</label>
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                             {(settings.categories?.expense || []).map((cat: string) => (
                                 <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50 group">
@@ -647,7 +703,7 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="New expense category..."
+                                placeholder={t.settings.newExpenseCategory}
                                 value={newExpense}
                                 onChange={(e) => setNewExpense(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && addCategory('expense', newExpense, setNewExpense)}
@@ -664,7 +720,7 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
 
                     {/* Income Categories */}
                     <div className="space-y-4">
-                        <label className="text-sm font-medium">Income Categories</label>
+                        <label className="text-sm font-medium">{t.settings.incomeCategories}</label>
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                             {(settings.categories?.income || []).map((cat: string) => (
                                 <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50 group">
@@ -681,7 +737,7 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
                         <div className="flex gap-2">
                             <input
                                 type="text"
-                                placeholder="New income category..."
+                                placeholder={t.settings.newIncomeCategory}
                                 value={newIncome}
                                 onChange={(e) => setNewIncome(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && addCategory('income', newIncome, setNewIncome)}
@@ -695,13 +751,48 @@ function CategoryManagement({ settings, updateSettings }: { settings: any, updat
                             </button>
                         </div>
                     </div>
+
+                    {/* Investment Categories */}
+                    <div className="space-y-4">
+                        <label className="text-sm font-medium">Investment Types</label>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                            {(settings.categories?.investment || []).map((cat: string) => (
+                                <div key={cat} className="flex items-center justify-between p-2 rounded-md bg-muted/50 group">
+                                    <span className="text-sm">{cat}</span>
+                                    <button
+                                        onClick={() => removeCategory('investment', cat)}
+                                        className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="New type..."
+                                value={newInvestment}
+                                onChange={(e) => setNewInvestment(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addCategory('investment', newInvestment, setNewInvestment)}
+                                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                            <button
+                                onClick={() => addCategory('investment', newInvestment, setNewInvestment)}
+                                className="p-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function SpaceManagement({ settings, addSpace, updateSpace, removeSpace, activeSpaceId }: { settings: any, addSpace: any, updateSpace: any, removeSpace: any, activeSpaceId: string }) {
+function SpaceManagement({ settings, addSpace, updateSpace, removeSpace, activeSpaceId }: { settings: AppSettings, addSpace: (n: string) => void, updateSpace: (id: string, n: string) => void, removeSpace: (id: string) => void, activeSpaceId: string }) {
+    const { t } = useTranslation();
     const [newSpaceName, setNewSpaceName] = useState('');
     const [editingSpace, setEditingSpace] = useState<{ id: string, name: string } | null>(null);
 
@@ -722,13 +813,13 @@ function SpaceManagement({ settings, addSpace, updateSpace, removeSpace, activeS
             <div className="rounded-xl border bg-card p-6 shadow-sm">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <Database className="h-4 w-4" />
-                    Space Management
+                    {t.settings.spaceManagement}
                 </h3>
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Your Spaces</label>
+                        <label className="text-sm font-medium">{t.settings.yourSpaces}</label>
                         <div className="flex flex-col gap-2">
-                            {settings.spaces?.map((space: any) => (
+                            {settings.spaces?.map((space: { id: string; name: string }) => (
                                 <div key={space.id} className="flex items-center justify-between p-3 rounded-md bg-muted/50 border group">
                                     {editingSpace?.id === space.id ? (
                                         <div className="flex items-center gap-2 w-full">

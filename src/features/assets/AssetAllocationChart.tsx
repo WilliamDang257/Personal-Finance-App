@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useStore } from '../../hooks/useStore';
+import type { Asset } from '../../types';
 import { useMemo } from 'react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#a855f7', '#ec4899', '#6366f1'];
@@ -18,7 +19,7 @@ export function AssetAllocationChart({ mode = 'summary', activeTab, includeLiabi
         const profileAssets = assets.filter(a => a.spaceId === activeSpace);
 
         // Helper to get bucket with fallback for legacy data
-        const getAssetBucket = (asset: any): string => {
+        const getAssetBucket = (asset: Asset): string => {
             if (asset.bucket) return asset.bucket;
             if (['Cash', 'Bank Deposit', 'cash', 'saving'].includes(asset.type)) return 'cash';
             if (['Stock', 'Bond', 'Fund certificate', 'Gold', 'Crypto', 'Business', 'investment'].includes(asset.type)) return 'investment';

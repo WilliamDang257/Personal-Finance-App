@@ -2,54 +2,66 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useStore } from '../../hooks/useStore';
 import { useMemo } from 'react';
 
-export function CashFlowChart() {
+interface Props {
+    selectedDate: Date;
+    viewMode: 'month' | 'year';
+}
+
+export function CashFlowChart({ selectedDate, viewMode }: Props) {
     const { transactions, settings } = useStore();
 
     const data = useMemo(() => {
-        const startDate = new Date('2026-01-01T00:00:00');
-        const endDate = new Date(); // Today
-        const months = [];
-
-        let d = new Date(startDate);
-        while (d <= endDate || d.getMonth() === endDate.getMonth()) {
-            months.push(d.toLocaleString('default', { month: 'short' }));
-            d.setMonth(d.getMonth() + 1);
-        }
-
+        const targetYear = selectedDate.getFullYear();
+        const targetMonth = selectedDate.getMonth();
         const activeSpace = settings.activeSpace;
         const result: Record<string, { income: number; expense: number }> = {};
 
-        // Initialize last 6 months
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            const key = d.toLocaleString('default', { month: 'short' });
-            result[key] = { income: 0, expense: 0 };
-        }
-
-        transactions.forEach(t => {
-            if (t.spaceId !== activeSpace) return;
-
-            const d = new Date(t.date);
-            // Check if within last 6 months (approx)
-            const now = new Date();
-            const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
-
-            if (diffMonths >= 0 && diffMonths <= 5) {
+        if (viewMode === 'year') {
+            // Initialize all 12 months for the selected year
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(targetYear, i, 1);
                 const key = d.toLocaleString('default', { month: 'short' });
-                if (result[key]) {
-                    if (t.type === 'income') result[key].income += t.amount;
-                    else result[key].expense += t.amount;
-                }
+                result[key] = { income: 0, expense: 0 };
             }
-        });
+
+            transactions.forEach(t => {
+                if (t.spaceId !== activeSpace) return;
+                const d = new Date(t.date);
+                if (d.getFullYear() === targetYear) {
+                    const key = d.toLocaleString('default', { month: 'short' });
+                    if (result[key]) {
+                        if (t.type === 'income') result[key].income += t.amount;
+                        else result[key].expense += t.amount;
+                    }
+                }
+            });
+        } else {
+            // Month View: Show Days
+            const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const key = i.toString();
+                result[key] = { income: 0, expense: 0 };
+            }
+
+            transactions.forEach(t => {
+                if (t.spaceId !== activeSpace) return;
+                const d = new Date(t.date);
+                if (d.getFullYear() === targetYear && d.getMonth() === targetMonth) {
+                    const key = d.getDate().toString();
+                    if (result[key]) {
+                        if (t.type === 'income') result[key].income += t.amount;
+                        else result[key].expense += t.amount;
+                    }
+                }
+            });
+        }
 
         return Object.entries(result).map(([name, { income, expense }]) => ({
             name,
             Income: income,
             Expense: expense
         }));
-    }, [transactions, settings.activeSpace]);
+    }, [transactions, settings.activeSpace, selectedDate, viewMode]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',

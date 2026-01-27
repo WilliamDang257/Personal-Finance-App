@@ -3,52 +3,83 @@ import { useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { FormInput, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-export function BudgetProgressCard() {
+interface Props {
+    selectedDate: Date;
+    viewMode: 'month' | 'year';
+}
+
+export function BudgetProgressCard({ selectedDate, viewMode }: Props) {
     const { transactions, budgets, settings } = useStore();
 
-    const { budgetItems, yearProgress } = useMemo(() => {
+    const { budgetItems, timeProgress } = useMemo(() => {
+        const targetMonth = selectedDate.getMonth();
+        const targetYear = selectedDate.getFullYear();
         const now = new Date();
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
-        const currentYear = now.getFullYear();
-        const isLeap = (currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0;
-        const totalDays = isLeap ? 366 : 365;
-        const progress = (dayOfYear / totalDays) * 100;
+        let progress = 0;
+
+        if (viewMode === 'year') {
+            // Year Progress
+            const startOfYear = new Date(targetYear, 0, 1);
+            // const endOfYear = new Date(targetYear, 11, 31);
+            const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+            const isLeap = (targetYear % 4 === 0 && targetYear % 100 !== 0) || targetYear % 400 === 0;
+            const totalDays = isLeap ? 366 : 365;
+
+            if (now.getFullYear() > targetYear) progress = 100;
+            else if (now.getFullYear() < targetYear) progress = 0;
+            else progress = (dayOfYear / totalDays) * 100;
+        } else {
+            // Month Progress
+            const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            if (now.getFullYear() > targetYear || (now.getFullYear() === targetYear && now.getMonth() > targetMonth)) {
+                progress = 100;
+            } else if (now.getFullYear() < targetYear || (now.getFullYear() === targetYear && now.getMonth() < targetMonth)) {
+                progress = 0;
+            } else {
+                progress = (now.getDate() / daysInMonth) * 100;
+            }
+        }
 
         const activeSpace = settings.activeSpace;
-
-        // Get active budgets for profile
-        const activeBudgets = budgets.filter(b => b.spaceId === activeSpace);
+        const activeBudgets = budgets.filter(b =>
+            b.spaceId === activeSpace &&
+            (b.year === targetYear || (!b.year && targetYear === new Date().getFullYear()))
+        );
 
         const items = activeBudgets.map(budget => {
-            // Calculate Annual Budget Limit
-            const annualLimit = budget.period === 'month' ? budget.amount * 12 : budget.amount;
+            // Limit Calculation
+            let limit = 0;
+            if (viewMode === 'year') {
+                limit = budget.period === 'month' ? budget.amount * 12 : budget.amount;
+            } else {
+                limit = budget.period === 'month' ? budget.amount : budget.amount / 12;
+            }
 
-            // Calculate YTD Spending for this category
-            const ytdSpent = transactions
+            // Spending Calculation
+            const spent = transactions
                 .filter(t => {
                     const d = new Date(t.date);
-                    return d.getFullYear() === currentYear &&
-                        t.type === 'expense' &&
-                        t.category === budget.category &&
-                        t.spaceId === activeSpace;
+                    const matchesSpace = t.type === 'expense' && t.spaceId === activeSpace && t.category === budget.category;
+                    const matchesYear = d.getFullYear() === targetYear;
+                    const matchesMonth = viewMode === 'month' ? d.getMonth() === targetMonth : true;
+                    return matchesSpace && matchesYear && matchesMonth;
                 })
                 .reduce((acc, curr) => acc + curr.amount, 0);
 
-            const spendingProgress = annualLimit > 0 ? (ytdSpent / annualLimit) * 100 : 0;
+            const spendingProgress = limit > 0 ? (spent / limit) * 100 : 0;
             const isOverbudget = spendingProgress > progress;
 
             return {
                 category: budget.category,
-                limit: annualLimit,
-                spent: ytdSpent,
+                limit: limit,
+                spent: spent,
                 progress: spendingProgress,
                 isOverbudget,
             };
-        }).sort((a, b) => b.progress - a.progress); // Sort by highest consumption first
+        }).sort((a, b) => b.progress - a.progress);
 
-        return { budgetItems: items, yearProgress: progress };
-    }, [transactions, budgets, settings.activeSpace]);
+        return { budgetItems: items, timeProgress: progress };
+    }, [transactions, budgets, settings.activeSpace, selectedDate, viewMode]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -65,7 +96,7 @@ export function BudgetProgressCard() {
                         Budget Pacing
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Year Progress: <span className="font-medium text-foreground">{yearProgress.toFixed(1)}%</span>
+                        {viewMode === 'year' ? 'Year Progress' : 'Month Progress'}: <span className="font-medium text-foreground">{timeProgress.toFixed(1)}%</span>
                     </p>
                 </div>
             </div>
@@ -92,11 +123,11 @@ export function BudgetProgressCard() {
                         </div>
 
                         <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-                            {/* Year Progress Marker */}
+                            {/* Marker */}
                             <div
                                 className="absolute top-0 bottom-0 w-0.5 bg-foreground z-10 opacity-50"
-                                style={{ left: `${yearProgress}%` }}
-                                title={`Year Progress: ${yearProgress.toFixed(1)}%`}
+                                style={{ left: `${timeProgress}%` }}
+                                title={`${viewMode === 'year' ? 'Year' : 'Month'} Progress: ${timeProgress.toFixed(1)}%`}
                             />
 
                             {/* Spending Progress Bar */}

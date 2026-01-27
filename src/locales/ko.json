@@ -1,4 +1,7 @@
 {
+    "app": {
+        "title": "개인 자산"
+    },
     "settings": {
         "title": "설정",
         "subtitle": "환경설정 및 데이터를 관리합니다.",
@@ -42,13 +45,72 @@
         "subtitle": "재무 건강에 대한 전략적 개요."
     },
     "transactions": {
-        "title": "거래"
+        "title": "거래",
+        "subtitle": "수입 및 지출을 관리합니다.",
+        "expenses": "지출",
+        "income": "수입",
+        "addIncome": "수입 추가",
+        "addExpense": "지출 추가",
+        "searchPlaceholder": "거래 검색...",
+        "allCategories": "모든 카테고리",
+        "newestFirst": "최신순",
+        "oldestFirst": "오래된순",
+        "sortByAmount": "금액순 정렬",
+        "date": "날짜",
+        "description": "내용",
+        "category": "카테고리",
+        "amount": "금액",
+        "actions": "작업",
+        "noTransactions": "거래 내역이 없습니다: "
     },
     "budgets": {
-        "title": "예산"
+        "title": "예산",
+        "subtitle": "월별 지출 한도를 관리합니다.",
+        "monthlyLimits": "월별 예산 한도",
+        "spent": "지출됨",
+        "remaining": "남음",
+        "resetMonthly": "매월 초기화",
+        "totalYearlyBudget": "연간 총 예산",
+        "addCategory": "카테고리 추가",
+        "addItem": "항목 추가",
+        "noBudgets": "아직 예산이 설정되지 않았습니다. 지출을 추적하려면 하나를 만드세요!",
+        "allocated": "할당됨",
+        "breakdown": "내역"
     },
     "assets": {
+        "title": "자산",
+        "subtitle": "자산 및 부채를 관리합니다.",
+        "cashAssets": "현금성 자산",
+        "liabilities": "부채",
+        "cashSubtitle": "현금, 저축 및 미수금을 추적합니다.",
+        "liabilitiesSubtitle": "부채, 대출 및 기타 의무를 관리합니다.",
+        "netWorth": "순자산",
+        "totalCashAssets": "총 현금성 자산",
+        "totalLiabilities": "총 부채",
+        "cash": "현금",
+        "receivables": "미수금",
+        "cashEquivalents": "현금 및 등가물",
+        "debtsPayables": "부채 및 미지급금",
+        "noItems": "이 섹션에 항목이 없습니다.",
+        "total": "합계",
+        "addAsset": "자산 추가",
+        "addItem": "항목 추가",
         "equity": "자산",
-        "liabilities": "부채"
+        "totalEquity": "총 자산"
+    },
+    "investments": {
+        "title": "투자",
+        "subtitle": "투자 포트폴리오 성과를 추적합니다.",
+        "marketData": "시장 데이터",
+        "totalValue": "총 가치",
+        "netInvested": "순 투자금",
+        "profitLoss": "손익",
+        "growthRate": "성장률",
+        "allocation": "자산 배분",
+        "capitalHistory": "자본 내역",
+        "investmentDeposit": "투자 입금",
+        "noHistory": "투자 내역이 없습니다.",
+        "currentHoldings": "현재 보유 자산",
+        "noAssets": "투자 자산이 없습니다."
     }
 }

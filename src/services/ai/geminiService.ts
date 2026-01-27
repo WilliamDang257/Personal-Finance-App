@@ -38,9 +38,12 @@ export class GeminiService {
         this.apiKey = apiKey;
     }
 
-    private async resolveModel(): Promise<string> {
+    private async resolveModel(key?: string): Promise<string> {
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
+            const apiKeyToUse = key || this.apiKey;
+            if (!apiKeyToUse) return this.modelName;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKeyToUse}`);
             if (!response.ok) return this.modelName;
 
             const data = await response.json();
@@ -56,14 +59,14 @@ export class GeminiService {
             ];
 
             // Filter for models that support generateContent
-            const availableModels = data.models.filter((m: any) =>
+            const availableModels = data.models.filter((m: { supportedGenerationMethods?: string[], name: string }) =>
                 m.supportedGenerationMethods?.includes('generateContent') &&
                 m.name.includes('gemini')
             );
 
             // Try to find a match in priority order
             for (const priority of priorities) {
-                const match = availableModels.find((m: any) => m.name.endsWith(priority));
+                const match = availableModels.find((m: { name: string }) => m.name.endsWith(priority));
                 if (match) {
                     const resolved = match.name.replace('models/', '');
                     console.log('Use Gemini Model:', resolved);
@@ -89,75 +92,113 @@ export class GeminiService {
         messages: ChatMessage[],
         systemPrompt?: string
     ): Promise<{ text: string; tokens?: { prompt: number; response: number; total: number } }> {
-        try {
-            // Resolve model if not already confident (or just do it once, but for now simple)
-            const model = await this.resolveModel();
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-            // Convert ChatMessage[] to Gemini format
-            const geminiMessages: GeminiMessage[] = messages
-                .filter(m => m.role !== 'system')
-                .map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
-
-            // Prepend system prompt if provided
-            if (systemPrompt) {
-                geminiMessages.unshift({
-                    role: 'user',
-                    parts: [{ text: systemPrompt }]
-                });
-                geminiMessages.unshift({
-                    role: 'model',
-                    parts: [{ text: 'Understood. I will act as your financial assistant.' }]
-                });
-            }
-
-            const requestBody: GeminiRequest = {
-                contents: geminiMessages,
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1000
-                }
-            };
-
-            const response = await fetch(`${url}?key=${this.apiKey}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Gemini API Error details:', errorData);
-                throw new Error(errorData.error?.message || `Gemini API Error: ${response.status} ${response.statusText}`);
-            }
-
-            const data: GeminiResponse = await response.json();
-
-            if (!data.candidates || data.candidates.length === 0) {
-                throw new Error('No response from Gemini');
-            }
-
-            const text = data.candidates[0].content.parts[0].text;
-            const usage = data.usageMetadata ? {
-                prompt: data.usageMetadata.promptTokenCount,
-                response: data.usageMetadata.candidatesTokenCount,
-                total: data.usageMetadata.totalTokenCount
-            } : undefined;
-
-            return { text, tokens: usage };
-        } catch (error) {
-            console.error('Gemini API error:', error);
-            throw error;
+        // Collect all available keys: User provided key + Embedded keys
+        const keysToTry: string[] = [];
+        if (this.apiKey) {
+            keysToTry.push(this.apiKey);
         }
+
+        // Add embedded keys if they exist and are valid
+        const { GEMINI_API_KEYS } = await import('../../config/aiConfig');
+        const embedded = GEMINI_API_KEYS.filter(k => k && !k.startsWith('//') && k.length > 20);
+        keysToTry.push(...embedded);
+
+        if (keysToTry.length === 0) {
+            throw new Error('No API key provided. Please add one in Settings or embed it in the code.');
+        }
+
+        let lastError: any = null;
+
+        // Try keys in order (Failover strategy)
+        for (const key of keysToTry) {
+            try {
+                // Resolve model (optional: could also cache this per key if needed)
+                // For simplicity, we use the key to check model availability only if we haven't resolved yet
+                // But honestly, just hardcoding the model endpoint is often safer than extra calls.
+                // Let's stick to the current logic but pass the key.
+                const model = await this.resolveModel(key);
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+
+                // Convert ChatMessage[] to Gemini format
+                const geminiMessages: GeminiMessage[] = messages
+                    .filter(m => m.role !== 'system')
+                    .map(m => ({
+                        role: m.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: m.content }]
+                    }));
+
+                // Prepend system prompt if provided
+                if (systemPrompt) {
+                    geminiMessages.unshift({
+                        role: 'user',
+                        parts: [{ text: systemPrompt }]
+                    });
+                    geminiMessages.unshift({
+                        role: 'model',
+                        parts: [{ text: 'Understood. I will act as your financial assistant.' }]
+                    });
+                }
+
+                const requestBody: GeminiRequest = {
+                    contents: geminiMessages,
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 1000
+                    }
+                };
+
+                const response = await fetch(`${url}?key=${key}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.warn(`Gemini API Error with key ${key.substring(0, 5)}...:`, errorData);
+
+                    // If regular error (not auth/quota), maybe don't retry? 
+                    // But usually multiple keys help with Quota mainly.
+                    if (response.status === 429 || response.status === 403 || response.status === 400) {
+                        // 429 = Quota exceeded, 403 = Invalid key, 400 = Bad Request (sometimes key related)
+                        lastError = new Error(errorData.error?.message || response.statusText);
+                        continue; // Try next key
+                    }
+
+                    throw new Error(errorData.error?.message || `Gemini API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data: GeminiResponse = await response.json();
+
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error('No response from Gemini');
+                }
+
+                const text = data.candidates[0].content.parts[0].text;
+                const usage = data.usageMetadata ? {
+                    prompt: data.usageMetadata.promptTokenCount,
+                    response: data.usageMetadata.candidatesTokenCount,
+                    total: data.usageMetadata.totalTokenCount
+                } : undefined;
+
+                return { text, tokens: usage };
+
+            } catch (error) {
+                console.warn(`Attempt failed with key ${key.substring(0, 5)}...`, error);
+                lastError = error;
+                // Continue to next key
+            }
+        }
+
+        // If loop finishes without success
+        throw lastError || new Error('All API keys failed.');
     }
 
     async testConnection(): Promise<boolean> {
         try {
+            // sendMessage handles key resolution now
             await this.sendMessage([
                 {
                     id: 'test',

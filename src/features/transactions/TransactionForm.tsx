@@ -18,6 +18,7 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [note, setNote] = useState('');
 
+    // Initialize with correct defaults
     useEffect(() => {
         if (initialData) {
             setType(initialData.type);
@@ -26,17 +27,21 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
             setDescription(initialData.description);
             setDate(initialData.date);
             setNote(initialData.note || '');
-        } else {
-            // Set default category for the current type
-            // Set default category for the current type
-            const expenses = settings.categories?.expense || [];
-            const incomes = settings.categories?.income || [];
-            const defaultCategory = type === 'expense'
-                ? (expenses[0] || '')
-                : (incomes[0] || '');
-            setCategory(defaultCategory);
         }
-    }, [initialData, type]);
+    }, [initialData]);
+
+    const handleTypeChange = (newType: TransactionType) => {
+        setType(newType);
+        // Reset category to default for the new type
+        const list = newType === 'expense'
+            ? (settings.categories?.expense || [])
+            : (settings.categories?.income || []);
+        if (list.length > 0) {
+            setCategory(list[0]);
+        } else {
+            setCategory('');
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +83,7 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
                     <div className="flex gap-4">
                         <button
                             type="button"
-                            onClick={() => setType('expense')}
+                            onClick={() => handleTypeChange('expense')}
                             className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors border ${type === 'expense'
                                 ? 'bg-red-500/10 border-red-500 text-red-500'
                                 : 'bg-background border-input hover:bg-accent'
@@ -88,7 +93,7 @@ export function TransactionForm({ onClose, initialData }: TransactionFormProps) 
                         </button>
                         <button
                             type="button"
-                            onClick={() => setType('income')}
+                            onClick={() => handleTypeChange('income')}
                             className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors border ${type === 'income'
                                 ? 'bg-green-500/10 border-green-500 text-green-500'
                                 : 'bg-background border-input hover:bg-accent'

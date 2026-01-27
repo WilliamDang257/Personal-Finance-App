@@ -3,24 +3,31 @@ import { useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { CalendarRange } from 'lucide-react';
 
-export function YTDSpendingCard() {
+interface Props {
+    selectedDate: Date;
+    viewMode: 'month' | 'year';
+}
+
+export function YTDSpendingCard({ selectedDate, viewMode }: Props) {
     const { transactions, settings } = useStore();
 
     const totalSpent = useMemo(() => {
-        const now = new Date();
-        const currentYear = now.getFullYear();
+        const targetYear = selectedDate.getFullYear();
+        const targetMonth = selectedDate.getMonth();
         const activeSpace = settings.activeSpace;
 
         return transactions.reduce((acc, t) => {
             const d = new Date(t.date);
-            if (t.type === 'expense' &&
-                d.getFullYear() === currentYear &&
-                t.spaceId === activeSpace) {
+            const matchesSpace = t.type === 'expense' && t.spaceId === activeSpace;
+            const matchesYear = d.getFullYear() === targetYear;
+            const matchesMonth = viewMode === 'month' ? d.getMonth() === targetMonth : true;
+
+            if (matchesSpace && matchesYear && matchesMonth) {
                 return acc + t.amount;
             }
             return acc;
         }, 0);
-    }, [transactions, settings.activeSpace]);
+    }, [transactions, settings.activeSpace, selectedDate, viewMode]);
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -37,12 +44,15 @@ export function YTDSpendingCard() {
             </div>
 
             <div>
-                <p className="text-sm font-medium text-muted-foreground">YTD Spending</p>
+                <p className="text-sm font-medium text-muted-foreground">{viewMode === 'year' ? 'Total Spending (Year)' : 'Monthly Spending'}</p>
                 <h3 className="mt-2 text-3xl font-bold tracking-tight text-red-500">
                     {formatter.format(totalSpent)}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Total expenses in {new Date().getFullYear()}
+                    {viewMode === 'year'
+                        ? `Total expenses in ${selectedDate.getFullYear()}`
+                        : `Total expenses in ${selectedDate.toLocaleString('default', { month: 'long' })}`
+                    }
                 </p>
             </div>
         </div>

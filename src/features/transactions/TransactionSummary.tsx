@@ -4,9 +4,11 @@ import { cn } from '../../lib/utils';
 
 export interface TransactionSummaryProps {
     type: 'income' | 'expense' | 'all';
+    selectedMonth: Date;
+    categoryFilter: string;
 }
 
-export function TransactionSummary({ type }: TransactionSummaryProps) {
+export function TransactionSummary({ type, selectedMonth, categoryFilter }: TransactionSummaryProps) {
     const { transactions, settings } = useStore();
 
     const formatter = new Intl.NumberFormat('en-US', {
@@ -16,18 +18,18 @@ export function TransactionSummary({ type }: TransactionSummaryProps) {
     });
 
     const summary = useMemo(() => {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const currentMonth = selectedMonth.getMonth();
+        const currentYear = selectedMonth.getFullYear();
         const activeSpace = settings.activeSpace;
 
         const currentMonthTransactions = transactions.filter(t => {
             const d = new Date(t.date);
             const matchesType = type === 'all' ? true : t.type === type;
-            return matchesType &&
-                t.spaceId === activeSpace &&
-                d.getMonth() === currentMonth &&
-                d.getFullYear() === currentYear;
+            const matchesSpace = t.spaceId === activeSpace;
+            const matchesDate = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            const matchesCategory = categoryFilter === 'all' ? true : t.category === categoryFilter;
+
+            return matchesType && matchesSpace && matchesDate && matchesCategory;
         });
 
         const total = currentMonthTransactions.reduce((acc, t) => {
@@ -50,14 +52,14 @@ export function TransactionSummary({ type }: TransactionSummaryProps) {
             .sort((a, b) => b.amount - a.amount);
 
         return { total, topCategories };
-    }, [transactions, settings.activeSpace, type]);
+    }, [transactions, settings.activeSpace, type, selectedMonth, categoryFilter]);
 
     return (
         <div className="rounded-xl border bg-card p-6 shadow-sm mb-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                        {type === 'income' ? 'Total Income' : type === 'expense' ? 'Total Expenses' : 'Net Flow'} (This Month)
+                        {type === 'income' ? 'Total Income' : type === 'expense' ? 'Total Expenses' : 'Net Flow'} ({selectedMonth.toLocaleString('default', { month: 'long' })})
                     </p>
                     <h3 className={cn("mt-1 text-3xl font-bold tracking-tight",
                         type === 'income' ? 'text-emerald-600' :

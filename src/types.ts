@@ -56,8 +56,17 @@ export interface Budget {
     category: string;
     amount: number;
     period: 'month' | 'year';
+    year: number;
     spaceId: string;
     subItems?: BudgetItem[];
+}
+
+export interface InvestmentLog {
+    id: string;
+    date: string;
+    amount: number;
+    note: string;
+    spaceId: string;
 }
 
 // Prediction / Forecasting
@@ -90,6 +99,7 @@ export interface ChatSettings {
 }
 
 export interface AppSettings {
+    appName?: string;
     currency: string;
     language: 'en' | 'vi' | 'ko';
     theme: 'light' | 'dark' | 'system' | 'pink' | 'red';
@@ -101,6 +111,7 @@ export interface AppSettings {
     categories: {
         income: string[];
         expense: string[];
+        investment: string[];
     };
     chat: ChatSettings;
 }
