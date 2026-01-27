@@ -59,6 +59,7 @@ export function InvestmentsPage() {
         if (!amount || !date) return;
 
         addInvestmentLog({
+            id: crypto.randomUUID(),
             date,
             amount: parseFloat(amount),
             note: note || t.investments.investmentDeposit,
