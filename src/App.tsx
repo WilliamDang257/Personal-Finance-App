@@ -20,7 +20,6 @@ function LoadingSpinner() {
 
 import { LockScreen } from './components/auth/LockScreen';
 import { useStore } from './hooks/useStore';
-import { useEffect } from 'react';
 
 function App() {
   const { isLocked, settings } = useStore();

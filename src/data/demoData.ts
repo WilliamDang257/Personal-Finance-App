@@ -319,6 +319,9 @@ export const generateDemoData = () => {
             enabled: false,
             provider: 'gemini',
             enableProactive: false
+        },
+        security: {
+            enabled: false
         }
     };
 
