@@ -80,12 +80,12 @@
     "assets": {
         "title": "Assets",
         "subtitle": "Manage your assets and liabilities.",
-        "cashAssets": "Cash Assets",
+        "cashAssets": "Cash & Receivable",
         "liabilities": "Liabilities",
         "cashSubtitle": "Track your cash, savings, and receivables.",
         "liabilitiesSubtitle": "Manage your debts, loans, and other obligations.",
         "netWorth": "Net Worth",
-        "totalCashAssets": "Total Cash Assets",
+        "totalCashAssets": "Total Cash & Receivable",
         "totalLiabilities": "Total Liabilities",
         "cash": "Cash",
         "receivables": "Receivables",
@@ -95,8 +95,8 @@
         "total": "Total",
         "addAsset": "Add Asset",
         "addItem": "Add Item",
-        "equity": "Equity",
-        "totalEquity": "Total Equity"
+        "equity": "Cash & Receivable",
+        "totalEquity": "Total"
     },
     "investments": {
         "title": "Investments",

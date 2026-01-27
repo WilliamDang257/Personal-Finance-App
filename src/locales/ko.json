@@ -80,12 +80,12 @@
     "assets": {
         "title": "자산",
         "subtitle": "자산 및 부채를 관리합니다.",
-        "cashAssets": "현금성 자산",
+        "cashAssets": "현금 및 미수금",
         "liabilities": "부채",
         "cashSubtitle": "현금, 저축 및 미수금을 추적합니다.",
         "liabilitiesSubtitle": "부채, 대출 및 기타 의무를 관리합니다.",
         "netWorth": "순자산",
-        "totalCashAssets": "총 현금성 자산",
+        "totalCashAssets": "총 현금 및 미수금",
         "totalLiabilities": "총 부채",
         "cash": "현금",
         "receivables": "미수금",
@@ -95,8 +95,8 @@
         "total": "합계",
         "addAsset": "자산 추가",
         "addItem": "항목 추가",
-        "equity": "자산",
-        "totalEquity": "총 자산"
+        "equity": "현금 및 미수금",
+        "totalEquity": "자산 합계"
     },
     "investments": {
         "title": "투자",

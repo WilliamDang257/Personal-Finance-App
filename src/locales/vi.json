@@ -80,12 +80,12 @@
     "assets": {
         "title": "Tài sản",
         "subtitle": "Quản lý tài sản và nợ phải trả.",
-        "cashAssets": "Tài sản tiền mặt",
+        "cashAssets": "Tiền mặt & Phải thu",
         "liabilities": "Nợ phải trả",
         "cashSubtitle": "Theo dõi tiền mặt, tiền tiết kiệm và các khoản phải thu.",
         "liabilitiesSubtitle": "Quản lý các khoản nợ, khoản vay và nghĩa vụ tài chính.",
         "netWorth": "Giá trị ròng",
-        "totalCashAssets": "Tổng tài sản tiền mặt",
+        "totalCashAssets": "Tổng Tiền mặt & Phải thu",
         "totalLiabilities": "Tổng nợ phải trả",
         "cash": "Tiền mặt",
         "receivables": "Phải thu",
@@ -95,8 +95,8 @@
         "total": "Tổng",
         "addAsset": "Thêm Tài sản",
         "addItem": "Thêm Mục",
-        "equity": "Vốn chủ sở hữu",
-        "totalEquity": "Tổng Vốn"
+        "equity": "Tiền mặt & Phải thu",
+        "totalEquity": "Tổng"
     },
     "investments": {
         "title": "Đầu tư",

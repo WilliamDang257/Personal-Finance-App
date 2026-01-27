@@ -12,8 +12,8 @@ export function Sidebar() {
     const navItems = [
         { icon: LayoutDashboard, label: t.dashboard.title, path: '/' },
         { icon: Wallet, label: t.transactions.title, path: '/transactions' },
-        { icon: TrendingUp, label: t.investments.title, path: '/investments' },
         { icon: PieChart, label: t.assets.equity, path: '/assets/equity' },
+        { icon: TrendingUp, label: t.investments.title, path: '/investments' },
         { icon: DollarSign, label: t.assets.liabilities, path: '/assets/liability' },
         { icon: Target, label: t.budgets.title, path: '/budgets' },
         { icon: Settings, label: t.settings.title, path: '/settings' },
