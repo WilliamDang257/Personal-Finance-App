@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
-import { FormInput, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { FormInput, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
 interface Props {
     selectedDate: Date;
@@ -94,6 +94,16 @@ export function BudgetProgressCard({ selectedDate, viewMode }: Props) {
                     <h3 className="font-semibold leading-none tracking-tight flex items-center gap-2">
                         <FormInput className="h-4 w-4" />
                         Budget Pacing
+                        <div className="group relative">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-lg bg-gray-900/95 text-white text-xs shadow-xl backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[9999] border border-white/10">
+                                <p className="font-semibold mb-1">Budget Pacing Explained:</p>
+                                <p className="opacity-90 leading-relaxed">
+                                    Compares your spending progress to time progress. If you've spent more than the time elapsed, you're pacing too fast.
+                                </p>
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95"></div>
+                            </div>
+                        </div>
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                         {viewMode === 'year' ? 'Year Progress' : 'Month Progress'}: <span className="font-medium text-foreground">{timeProgress.toFixed(1)}%</span>

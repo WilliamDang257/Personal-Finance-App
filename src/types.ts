@@ -117,5 +117,14 @@ export interface AppSettings {
     security: {
         enabled: boolean;
         pin?: string;
+        securityQuestion?: string;
+        securityAnswer?: string; // Encrypted or hashed ideally, but plain for now as per local-only architecture
+    };
+    googleSheets?: {
+        enabled: boolean;
+        clientId: string;
+        spreadsheetId: string;
+        sheetName?: string;
+        lastSynced?: string;
     };
 }

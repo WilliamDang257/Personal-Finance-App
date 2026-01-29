@@ -32,7 +32,7 @@ export interface GeminiResponse {
 
 export class GeminiService {
     private apiKey: string;
-    private modelName: string = 'gemini-1.5-flash'; // default fallback
+    private modelName: string = 'gemini-2.5-flash'; // default fallback
 
     constructor(apiKey: string) {
         this.apiKey = apiKey;
@@ -51,6 +51,7 @@ export class GeminiService {
 
             // Priority list of models to look for
             const priorities = [
+                'gemini-2.5-flash',
                 'gemini-1.5-flash',
                 'gemini-1.5-flash-latest',
                 'gemini-1.5-flash-001',

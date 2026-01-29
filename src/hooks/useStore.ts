@@ -50,13 +50,19 @@ interface AppState {
 
     // Security
     isLocked: boolean;
-    setPin: (pin: string) => void;
+    setPin: (pin: string, securityQuestion?: string, securityAnswer?: string) => void;
     unlock: () => void;
     lock: () => void;
     verifyPin: (pin: string) => boolean;
+    verifySecurityAnswer: (answer: string) => boolean;
+
+    // Google Sheets Sync
+    syncTransactionsFromSheets: (silent?: boolean) => Promise<void>;
 }
 
 import CATEGORIES from '../data/categories.json';
+import { GoogleSheetsService } from '../services/google/googleSheetsService';
+import { v4 as uuidv4 } from 'uuid';
 
 // ... (AppState interface)
 
@@ -186,10 +192,15 @@ export const useStore = create<AppState>()(
 
             // Security Actions
             isLocked: false,
-            setPin: (pin) => set((state) => ({
+            setPin: (pin, securityQuestion, securityAnswer) => set((state) => ({
                 settings: {
                     ...state.settings,
-                    security: { enabled: true, pin }
+                    security: {
+                        enabled: true,
+                        pin,
+                        securityQuestion,
+                        securityAnswer
+                    }
                 },
                 isLocked: false
             })),
@@ -204,6 +215,92 @@ export const useStore = create<AppState>()(
             verifyPin: (pin) => {
                 const state = get();
                 return state.settings.security?.pin === pin;
+            },
+            verifySecurityAnswer: (answer) => {
+                const state = get();
+                const storedAnswer = state.settings.security?.securityAnswer;
+                if (!storedAnswer) return false;
+                // Case-insensitive comparison and trim whitespace
+                return storedAnswer.trim().toLowerCase() === answer.trim().toLowerCase();
+            },
+
+            syncTransactionsFromSheets: async (silent = false) => {
+                const { settings, addTransaction, updateSettings } = get();
+
+                if (!settings.googleSheets?.enabled || !settings.googleSheets.clientId || !settings.googleSheets.spreadsheetId) {
+                    if (!silent) console.error("Google Sheets sync not configured");
+                    return;
+                }
+
+                const service = new GoogleSheetsService(settings.googleSheets.clientId);
+
+                try {
+                    const rows = await service.fetchSheetData(settings.googleSheets.spreadsheetId);
+                    const existingTransactions = get().transactions;
+
+                    let addedCount = 0;
+
+                    rows.forEach(row => {
+                        // 1. Parse Date
+                        const date = new Date(row.timestamp);
+                        if (isNaN(date.getTime())) return;
+
+                        const dateStr = date.toISOString();
+                        const amount = parseFloat(row.amount.replace(/[^0-9.-]+/g, "")); // simple cleanup
+
+                        if (isNaN(amount)) return;
+
+                        // 2. Normalize Data
+                        // Handle "Income" or "Expense" case insensitively
+                        let type: 'income' | 'expense' = 'expense';
+                        if (row.type.toLowerCase().includes('income')) {
+                            type = 'income';
+                        }
+
+                        const category = row.category.trim();
+                        const note = row.note.trim();
+
+                        // 3. Deduplicate
+                        const isDuplicate = existingTransactions.some(t => {
+                            const tDate = new Date(t.date);
+                            const matchDate = tDate.getFullYear() === date.getFullYear() &&
+                                tDate.getMonth() === date.getMonth() &&
+                                tDate.getDate() === date.getDate();
+
+                            // Close match check
+                            return matchDate && t.amount === amount && t.type === type && t.note === note;
+                        });
+
+                        if (!isDuplicate) {
+                            addTransaction({
+                                id: uuidv4(),
+                                date: dateStr,
+                                amount: amount,
+                                type: type,
+                                category: category,
+                                description: note, // Map sheet 'note' to app 'description'
+                                spaceId: settings.activeSpace || 'personal', // Default to active space
+                            });
+                            addedCount++;
+                        }
+                    });
+
+                    if (addedCount > 0) {
+                        updateSettings({
+                            googleSheets: {
+                                ...settings.googleSheets,
+                                lastSynced: new Date().toISOString()
+                            }
+                        });
+                        if (!silent) alert(`Synced ${addedCount} new transactions!`);
+                    } else {
+                        if (!silent) alert('No new transactions found.');
+                    }
+
+                } catch (error) {
+                    console.error("Sync failed", error);
+                    if (!silent) alert("Failed to sync with Google Sheets. Check console for details.");
+                }
             },
         }),
         {

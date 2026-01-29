@@ -1,4 +1,4 @@
-import { ArrowRight, Wallet, TrendingUp } from 'lucide-react';
+import { ArrowRight, Wallet, TrendingUp, Info } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
 
 export function NetWorthCard() {
@@ -64,13 +64,25 @@ export function NetWorthCard() {
     });
 
     return (
-        <div className="relative overflow-hidden rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-all hover:shadow-md">
+        <div className="relative overflow-visible rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-all hover:shadow-md">
             <div className="flex items-center justify-between mb-4">
                 <div className="rounded-full bg-primary/10 p-3 text-primary">
                     <TrendingUp className="h-5 w-5" />
                 </div>
                 <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Current Net Worth</p>
+                    <div className="flex items-center justify-end gap-1">
+                        <p className="text-xs text-muted-foreground">Current Net Worth</p>
+                        <div className="group relative">
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                            <div className="absolute bottom-full right-0 mb-2 w-56 p-3 rounded-lg bg-gray-900/95 text-white text-xs shadow-xl backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[9999] border border-white/10">
+                                <p className="font-semibold mb-1">Net Worth Formula:</p>
+                                <p className="opacity-90 leading-relaxed">
+                                    Total Assets - Total Liabilities
+                                </p>
+                                <div className="absolute -bottom-1 right-4 border-4 border-transparent border-t-gray-900/95"></div>
+                            </div>
+                        </div>
+                    </div>
                     <h3 className="text-2xl font-bold tracking-tight text-primary">
                         {formatter.format(netWorth)}
                     </h3>
@@ -80,7 +92,19 @@ export function NetWorthCard() {
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 border-b pb-4">
                     <div>
-                        <p className="text-xs font-medium text-muted-foreground">Assets</p>
+                        <div className="flex items-center gap-1">
+                            <p className="text-xs font-medium text-muted-foreground">Assets</p>
+                            <div className="group relative">
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-56 p-3 rounded-lg bg-gray-900/95 text-white text-xs shadow-xl backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[9999] border border-white/10">
+                                    <p className="font-semibold mb-1">Assets Calculation:</p>
+                                    <p className="opacity-90 leading-relaxed">
+                                        Sum of all non-liability assets (cash, investments, receivables, etc.)
+                                    </p>
+                                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900/95"></div>
+                                </div>
+                            </div>
+                        </div>
                         <p className="text-lg font-semibold text-emerald-600">
                             {formatter.format(totalAssets)}
                         </p>
@@ -105,6 +129,18 @@ export function NetWorthCard() {
                     <div className="flex items-center gap-2">
                         <Wallet className="h-4 w-4 text-muted-foreground" />
                         <h4 className="font-semibold text-sm">End-of-Year Projection</h4>
+                        <div className="group relative">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 rounded-lg bg-gray-900/95 text-white text-xs shadow-xl backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-[9999] border border-white/10">
+                                <p className="font-semibold mb-1">Projection Formula:</p>
+                                <p className="opacity-90 leading-relaxed">
+                                    Current Net Worth <br />
+                                    + (Avg Monthly Income × Remaining Months) <br />
+                                    - Remaining Annual Budget
+                                </p>
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900/95"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="rounded-lg bg-muted/50 p-4 border border-dashed">

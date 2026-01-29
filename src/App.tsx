@@ -21,9 +21,18 @@ function LoadingSpinner() {
 import { LockScreen } from './components/auth/LockScreen';
 import { useStore } from './hooks/useStore';
 
+import { useEffect } from 'react'; // Ensure React import includes useEffect
+
 function App() {
-  const { isLocked, settings } = useStore();
+  const { isLocked, settings, syncTransactionsFromSheets } = useStore(); // destructure sync action
   const shouldLock = isLocked && settings.security?.enabled;
+
+  useEffect(() => {
+    // Attempt silent sync on mount if enabled
+    if (settings.googleSheets?.enabled) {
+      syncTransactionsFromSheets(true);
+    }
+  }, []); // Run once on mount
 
   return (
     <BrowserRouter>

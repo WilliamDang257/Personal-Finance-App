@@ -1,10 +1,10 @@
 import { generateDemoData } from '../../data/demoData';
 import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
-import { hasEmbeddedKeys } from '../../config/aiConfig';
 import type { AppSettings } from '../../types';
 import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart, Settings, Tags, Sparkles, Target, Shield } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { extractSpreadsheetId, GOOGLE_OAUTH_CONFIG } from '../../config/googleSheetsConfig';
 
 export function SettingsPage() {
     const { t } = useTranslation();
@@ -78,12 +78,15 @@ export function SettingsPage() {
                             addTransaction={addTransaction}
                             addAsset={addAsset}
                         />
+                        <div className="md:col-span-2">
+                            <GoogleSheetsSettings />
+                        </div>
                     </div>
                 )}
 
                 {activeTab === 'ai' && (
                     <div className="max-w-2xl">
-                        <AISettings settings={settings} updateSettings={updateSettings} />
+                        <AISettings />
                     </div>
                 )}
             </div>
@@ -243,100 +246,107 @@ function BudgetRulesSettings({ settings, updateSettings, t }: SettingsProps) {
     );
 }
 
-interface AISettingsProps {
-    settings: AppSettings;
-    updateSettings: (settings: Partial<AppSettings>) => void;
+
+
+
+function GoogleSheetsSettings() {
+    const { settings, updateSettings, syncTransactionsFromSheets } = useStore();
+    const [sheetUrl, setSheetUrl] = useState(settings.googleSheets?.spreadsheetId || '');
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSave = () => {
+        const spreadsheetId = extractSpreadsheetId(sheetUrl);
+
+        if (!spreadsheetId) {
+            alert('Please enter a valid Google Sheets URL or Spreadsheet ID');
+            return;
+        }
+
+        updateSettings({
+            googleSheets: {
+                enabled: true,
+                clientId: GOOGLE_OAUTH_CONFIG.CLIENT_ID,
+                spreadsheetId
+            }
+        });
+        alert('Google Sheets settings saved!');
+    };
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        await syncTransactionsFromSheets();
+        setIsSyncing(false);
+    };
+
+    return (
+        <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Google Sheets Sync
+            </h3>
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Google Sheets URL or ID</label>
+                    <input
+                        type="text"
+                        value={sheetUrl}
+                        onChange={(e) => setSheetUrl(e.target.value)}
+                        placeholder="Paste full URL or just the Spreadsheet ID"
+                        className="w-full p-2 rounded-md border text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        💡 Just copy the full URL from your browser and paste it here!
+                    </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-4">
+                    <div className="text-xs text-muted-foreground">
+                        Last Synced: {settings.googleSheets?.lastSynced ? new Date(settings.googleSheets.lastSynced).toLocaleString() : 'Never'}
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleSave}
+                            className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
+                        >
+                            Save Settings
+                        </button>
+                        <button
+                            onClick={handleSync}
+                            disabled={isSyncing || !sheetUrl}
+                            className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm disabled:opacity-50"
+                        >
+                            {isSyncing ? 'Syncing...' : 'Sync Now'}
+                        </button>
+                    </div>
+                </div>
+
+                {settings.googleSheets?.enabled && (
+                    <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                        <p>✅ Google Sheets sync configured</p>
+                        <p className="mt-1 opacity-75">You'll authorize once, then tokens are saved.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
-function AISettings({ settings, updateSettings }: AISettingsProps) {
+function AISettings() {
     return (
         <div className="rounded-xl border bg-card p-6 shadow-sm">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
                 AI Assistant
             </h3>
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                        <label className="text-sm font-medium">Enable AI Assistant</label>
-                        <p className="text-xs text-muted-foreground">Turn on the AI-powered financial chatbot.</p>
-                    </div>
-                    <button
-                        role="switch"
-                        aria-checked={settings.chat?.enabled ?? false}
-                        onClick={() => updateSettings({
-                            chat: {
-                                ...settings.chat,
-                                enabled: !(settings.chat?.enabled ?? false),
-                                provider: 'gemini',
-                                enableProactive: settings.chat?.enableProactive ?? false
-                            }
-                        })}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${(settings.chat?.enabled ?? false) ? 'bg-primary' : 'bg-input/20 border-2 border-input'
-                            }`}
-                    >
-                        <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform shadow-sm ${(settings.chat?.enabled ?? false) ? 'translate-x-6' : 'translate-x-1'
-                                }`}
-                        />
-                    </button>
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                <div className="p-4 bg-primary/10 rounded-full">
+                    <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Gemini API Key</label>
-                    {hasEmbeddedKeys ? (
-                        <div className="p-3 bg-muted rounded-md border border-input">
-                            <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-sm font-medium">Managed by Application</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                API access is pre-configured. No action needed.
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            <input
-                                type="password"
-                                value={settings.chat?.apiKey || ''}
-                                onChange={(e) => {
-                                    let cleanKey = e.target.value.trim();
-                                    const match = cleanKey.match(/AIza[0-9A-Za-z-_]{35}/);
-                                    if (match) {
-                                        cleanKey = match[0];
-                                    }
-
-                                    updateSettings({
-                                        chat: {
-                                            ...settings.chat,
-                                            enabled: settings.chat?.enabled ?? false,
-                                            provider: 'gemini',
-                                            apiKey: cleanKey,
-                                            enableProactive: settings.chat?.enableProactive ?? false
-                                        }
-                                    });
-                                }}
-                                placeholder="Enter your Gemini API key..."
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Get a free API key at:{' '}
-                                <a
-                                    href="https://makersuite.google.com/app/apikey"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                >
-                                    Google AI Studio
-                                </a>
-                            </p>
-                        </>
-                    )}
-                </div>
-
-                <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
-                    <p className="font-medium mb-1">Privacy Notice:</p>
-                    <p>The AI assistant analyzes your financial data to provide insights. Your API key is stored locally and only minimal context is sent to Google's Gemini API.</p>
+                <div>
+                    <h4 className="text-lg font-semibold">Coming Soon</h4>
+                    <p className="text-muted-foreground max-w-sm mx-auto mt-2">
+                        We are upgrading our AI financial advisor to provide even smarter insights. Stay tuned for the update!
+                    </p>
                 </div>
             </div>
         </div>
@@ -919,6 +929,8 @@ function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
     const [pin, setPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [currentPin, setCurrentPin] = useState('');
+    const [question, setQuestion] = useState('');
+    const [answer, setAnswer] = useState('');
     const [isSettingPin, setIsSettingPin] = useState(false);
     const [isChangingPin, setIsChangingPin] = useState(false);
     const [step, setStep] = useState<'verify' | 'set'>('verify'); // For change flow
@@ -934,7 +946,8 @@ function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
             return;
         }
 
-        useStore.getState().setPin(pin);
+        // Save PIN and Security Question (if provided)
+        useStore.getState().setPin(pin, question, answer);
         resetState();
     };
 
@@ -956,6 +969,8 @@ function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
         setPin('');
         setConfirmPin('');
         setCurrentPin('');
+        setQuestion('');
+        setAnswer('');
         setError('');
     };
 
@@ -1033,6 +1048,23 @@ function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
                                 placeholder={t.settings.security?.confirmPin || 'Confirm PIN'}
                                 className="w-full p-2 rounded-md border text-sm"
                             />
+                            <div className="pt-2 border-t mt-2">
+                                <h5 className="text-xs font-semibold mb-2">Recovery Question (Optional but Recommended)</h5>
+                                <input
+                                    type="text"
+                                    value={question}
+                                    onChange={(e) => setQuestion(e.target.value)}
+                                    placeholder="Security Question (e.g. First pet's name?)"
+                                    className="w-full p-2 rounded-md border text-sm mb-2"
+                                />
+                                <input
+                                    type="text"
+                                    value={answer}
+                                    onChange={(e) => setAnswer(e.target.value)}
+                                    placeholder="Answer"
+                                    className="w-full p-2 rounded-md border text-sm"
+                                />
+                            </div>
                             {error && <p className="text-xs text-destructive">{error}</p>}
                             <div className="flex justify-end gap-2">
                                 <button onClick={resetState} className="px-3 py-1 text-sm">{t.common?.cancel || 'Cancel'}</button>
@@ -1073,27 +1105,47 @@ function SecuritySettings({ settings, updateSettings, t }: SettingsProps) {
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <input
-                                    type="password"
-                                    maxLength={6}
-                                    value={pin}
-                                    onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
-                                    placeholder={t.settings.security?.newPin || 'New PIN'}
-                                    className="w-full p-2 rounded-md border text-sm"
-                                    autoFocus
-                                />
-                                <input
-                                    type="password"
-                                    maxLength={6}
-                                    value={confirmPin}
-                                    onChange={(e) => setConfirmPin(e.target.value.replace(/[^0-9]/g, ''))}
-                                    placeholder={t.settings.security?.confirmPin || 'Confirm PIN'}
-                                    className="w-full p-2 rounded-md border text-sm"
-                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="password"
+                                        maxLength={6}
+                                        value={pin}
+                                        onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                        placeholder={t.settings.security?.newPin || 'New PIN (6 digits)'}
+                                        className="p-2 rounded-md border text-sm"
+                                        autoFocus
+                                    />
+                                    <input
+                                        type="password"
+                                        maxLength={6}
+                                        value={confirmPin}
+                                        onChange={(e) => setConfirmPin(e.target.value.replace(/[^0-9]/g, ''))}
+                                        placeholder={t.settings.security?.confirmPin || 'Confirm PIN'}
+                                        className="p-2 rounded-md border text-sm"
+                                    />
+                                </div>
+                                <div className="pt-2 border-t mt-2">
+                                    <h5 className="text-xs font-semibold mb-2">Recovery Question (Optional but Recommended)</h5>
+                                    <input
+                                        type="text"
+                                        value={question}
+                                        onChange={(e) => setQuestion(e.target.value)}
+                                        placeholder="Security Question (e.g. First pet's name?)"
+                                        className="w-full p-2 rounded-md border text-sm mb-2"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={answer}
+                                        onChange={(e) => setAnswer(e.target.value)}
+                                        placeholder="Answer"
+                                        className="w-full p-2 rounded-md border text-sm"
+                                    />
+                                </div>
+
                                 {error && <p className="text-xs text-destructive">{error}</p>}
                                 <div className="flex justify-end gap-2">
                                     <button onClick={resetState} className="px-3 py-1 text-sm">{t.common?.cancel || 'Cancel'}</button>
-                                    <button onClick={handleSetPin} className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm">Save</button>
+                                    <button onClick={handleSetPin} className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm">Save New PIN</button>
                                 </div>
                             </div>
                         )}

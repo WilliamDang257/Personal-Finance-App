@@ -62,12 +62,6 @@ const TOUR_STEPS: GuideStep[] = [
         content: 'Keep your data safe! Enable PIN protection here to prevent unauthorized access.',
         position: 'top',
         path: '/settings'
-    },
-    {
-        target: '#chatbot-trigger',
-        title: 'AI Assistant',
-        content: 'Need help or insights? Chat with your AI financial advisor here.',
-        position: 'top'
     }
 ];
 

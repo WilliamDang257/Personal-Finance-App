@@ -3,13 +3,13 @@ import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import { TransactionForm } from './TransactionForm';
 import { TransactionSummary } from './TransactionSummary';
-import { Plus, Trash2, Search, Pencil, Filter, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Filter, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { Transaction } from '../../types';
 
 export function TransactionsPage() {
     const { t } = useTranslation();
-    const { transactions, removeTransaction, settings } = useStore();
+    const { transactions, removeTransaction, settings, syncTransactionsFromSheets } = useStore();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
     const [search, setSearch] = useState('');
@@ -17,6 +17,7 @@ export function TransactionsPage() {
     const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount'>('date-desc');
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const formatter = new Intl.NumberFormat(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'en-US'), {
         style: 'currency',
@@ -71,6 +72,19 @@ export function TransactionsPage() {
     const handleClose = () => {
         setIsFormOpen(false);
         setEditingTransaction(undefined);
+    };
+
+    const handleSync = async () => {
+        if (!settings.googleSheets?.enabled) {
+            alert('Google Sheets sync is not configured. Please set it up in Settings.');
+            return;
+        }
+        setIsSyncing(true);
+        try {
+            await syncTransactionsFromSheets(false);
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     return (
@@ -143,14 +157,27 @@ export function TransactionsPage() {
                             </button>
                         </div>
 
-                        <button
-                            onClick={handleAddNew}
-                            className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'income' ? 'bg-emerald-600' : 'bg-red-600'
-                                }`}
-                        >
-                            <Plus className="h-4 w-4" />
-                            {activeTab === 'income' ? t.transactions.addIncome : t.transactions.addExpense}
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                            {settings.googleSheets?.enabled && (
+                                <button
+                                    onClick={handleSync}
+                                    disabled={isSyncing}
+                                    className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                                    {isSyncing ? 'Syncing...' : 'Sync'}
+                                </button>
+                            )}
+                            <button
+                                onClick={handleAddNew}
+                                className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'income' ? 'bg-emerald-600' : 'bg-red-600'
+                                    }`}
+                            >
+                                <Plus className="h-4 w-4" />
+                                {activeTab === 'income' ? t.transactions.addIncome : t.transactions.addExpense}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
