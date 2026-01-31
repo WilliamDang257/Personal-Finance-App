@@ -91,9 +91,7 @@ export function SettingsPage() {
                             addTransaction={addTransaction}
                             addAsset={addAsset}
                         />
-                        <div className="md:col-span-2">
-                            <GoogleSheetsSettings />
-                        </div>
+
                     </div>
                 )}
 

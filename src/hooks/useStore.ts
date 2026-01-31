@@ -71,6 +71,7 @@ import CATEGORIES from '../data/categories.json';
 import { GoogleSheetsService } from '../services/google/googleSheetsService';
 import { v4 as uuidv4 } from 'uuid';
 import { StorageFactory } from '../services/storage/storageFactory';
+import { GOOGLE_OAUTH_CONFIG } from '../config/googleSheetsConfig';
 
 // ... (AppState interface)
 
@@ -276,7 +277,7 @@ export const useStore = create<AppState>()(
                     return;
                 }
 
-                const service = new GoogleSheetsService(settings.googleSheets.clientId);
+                const service = new GoogleSheetsService(GOOGLE_OAUTH_CONFIG.CLIENT_ID);
 
                 try {
                     const rows = await service.fetchSheetData(settings.googleSheets.spreadsheetId);
