@@ -7,6 +7,7 @@ const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage').th
 const TransactionsPage = lazy(() => import('./features/transactions/TransactionsPage').then(module => ({ default: module.TransactionsPage })));
 const AssetsPage = lazy(() => import('./features/assets/AssetsPage').then(module => ({ default: module.AssetsPage })));
 const BudgetsPage = lazy(() => import('./features/budgets/BudgetsPage').then(module => ({ default: module.BudgetsPage })));
+const RemindersPage = lazy(() => import('./features/reminders/RemindersPage'));
 const InvestmentsPage = lazy(() => import('./features/investments/InvestmentsPage').then(module => ({ default: module.InvestmentsPage })));
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then(module => ({ default: module.SettingsPage })));
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -57,6 +58,7 @@ function App() {
               <Route path="assets/liability" element={<AssetsPage mode="liability" />} />
               <Route path="assets" element={<Navigate to="assets/equity" replace />} />
               <Route path="budgets" element={<BudgetsPage />} />
+              <Route path="reminders" element={<RemindersPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

@@ -161,7 +161,19 @@ export class GoogleSheetsService {
 
                     resolve(parsedRows);
 
-                } catch (e) {
+                } catch (e: any) {
+                    // Handle 401 Unauthorized (Token expired or revoked)
+                    if (e.status === 401 || (e.result && e.result.error && e.result.error.code === 401)) {
+                        console.log("Token expired or invalid (401). clearing and refreshing...");
+                        this.clearToken();
+                        window.gapi.client.setToken(null);
+
+                        // Request new token with consent prompt to ensure fresh credentials
+                        // This will trigger this callback again upon success
+                        this.tokenClient.requestAccessToken({ prompt: 'consent' });
+                        return;
+                    }
+
                     reject(e);
                 }
             };

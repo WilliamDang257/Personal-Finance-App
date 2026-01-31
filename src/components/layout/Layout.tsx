@@ -65,8 +65,13 @@ const TOUR_STEPS: GuideStep[] = [
     }
 ];
 
+import { useReminderNotifications } from '../../hooks/useReminderNotifications';
+// import { useTheme } from '../../hooks/useTheme';
+
 export function Layout() {
     const { settings } = useStore();
+    // const { isDark } = useTheme();
+    useReminderNotifications(); // Initialize notifications
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {

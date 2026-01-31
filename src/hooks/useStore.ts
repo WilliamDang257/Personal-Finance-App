@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Asset, Transaction, Budget, AppSettings, Space, MonthlySummary, ChatMessage, InvestmentLog } from '../types';
+import type { Asset, Transaction, Budget, AppSettings, Space, MonthlySummary, ChatMessage, InvestmentLog, Reminder } from '../types';
 
 interface AppState {
     transactions: Transaction[];
@@ -9,12 +9,19 @@ interface AppState {
     budgets: Budget[];
     monthlySummaries: MonthlySummary[];
     chatMessages: ChatMessage[];
+    reminders: Reminder[];
     settings: AppSettings;
     activeSpace: () => Space;
     // Transaction Actions
     addTransaction: (transaction: Transaction) => void;
     removeTransaction: (id: string) => void;
     updateTransaction: (transaction: Transaction) => void;
+    // Reminder Actions
+    addReminder: (reminder: Reminder) => void;
+    updateReminder: (reminder: Reminder) => void;
+    deleteReminder: (id: string) => void;
+    completeReminder: (id: string) => void;
+    // Asset Actions
     // Asset Actions
     addAsset: (asset: Asset) => void;
     removeAsset: (id: string) => void;
@@ -38,7 +45,7 @@ interface AppState {
     addSpace: (name: string) => void;
     updateSpace: (id: string, name: string) => void;
     removeSpace: (id: string) => void;
-    importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[] }) => void;
+    importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[], reminders: Reminder[] }) => void;
     // Guide Actions
     activeGuide: string | null;
     currentStep: number;
@@ -84,6 +91,7 @@ export const useStore = create<AppState>()(
             budgets: [],
             monthlySummaries: [],
             chatMessages: [],
+            reminders: [],
             settings: {
                 appName: 'Personal Wealth',
                 currency: 'VND',
@@ -134,6 +142,53 @@ export const useStore = create<AppState>()(
                 }));
                 StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.updateTransaction(t));
             },
+
+
+            // Reminder Actions
+            addReminder: (r) => {
+                set((state) => ({ reminders: [...state.reminders, r] }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveReminder(r));
+            },
+            updateReminder: (r) => {
+                set((state) => ({
+                    reminders: state.reminders.map((reminder) => (reminder.id === r.id ? r : reminder)),
+                }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveReminder(r));
+            },
+            deleteReminder: (id) => {
+                set((state) => ({ reminders: state.reminders.filter((r) => r.id !== id) }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.deleteReminder(id));
+            },
+            completeReminder: (id) => {
+                const state = get();
+                const reminder = state.reminders.find((r) => r.id === id);
+                if (!reminder) return;
+
+                if (reminder.isRecurring && reminder.frequency) {
+                    // Calculate next date
+                    const date = new Date(reminder.date);
+                    switch (reminder.frequency) {
+                        case 'daily':
+                            date.setDate(date.getDate() + 1);
+                            break;
+                        case 'weekly':
+                            date.setDate(date.getDate() + 7);
+                            break;
+                        case 'monthly':
+                            date.setMonth(date.getMonth() + 1);
+                            break;
+                        case 'yearly':
+                            date.setFullYear(date.getFullYear() + 1);
+                            break;
+                    }
+                    const updatedReminder = { ...reminder, date: date.toISOString() };
+                    get().updateReminder(updatedReminder);
+                } else {
+                    // Mark as completed
+                    get().updateReminder({ ...reminder, isCompleted: true });
+                }
+            },
+
             addAsset: (a) => {
                 set((state) => ({ assets: [...state.assets, a] }));
                 StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveAsset(a));
@@ -211,19 +266,21 @@ export const useStore = create<AppState>()(
                     transactions: state.transactions.filter(t => t.spaceId !== id),
                     assets: state.assets.filter(a => a.spaceId !== id),
                     budgets: state.budgets.filter(b => b.spaceId !== id),
+                    reminders: state.reminders.filter(r => r.spaceId !== id),
                     monthlySummaries: state.monthlySummaries.filter(s => s.spaceId !== id),
                     chatMessages: state.chatMessages.filter(m => m.spaceId !== id)
                 };
             }),
 
-            importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[] }) => set(() => ({
+            importData: (data: { assets: Asset[], budgets: Budget[], transactions: Transaction[], settings: AppSettings, monthlySummaries: MonthlySummary[], chatMessages: ChatMessage[], investmentLogs: InvestmentLog[], reminders: Reminder[] }) => set(() => ({
                 assets: data.assets,
                 budgets: data.budgets,
                 transactions: data.transactions,
                 settings: data.settings,
                 monthlySummaries: data.monthlySummaries,
                 chatMessages: data.chatMessages || [],
-                investmentLogs: data.investmentLogs || []
+                investmentLogs: data.investmentLogs || [],
+                reminders: data.reminders || []
             })),
 
             // Guide Implementation
@@ -237,18 +294,27 @@ export const useStore = create<AppState>()(
 
             // Security Actions
             isLocked: false,
-            setPin: (pin, securityQuestion, securityAnswer) => set((state) => ({
-                settings: {
-                    ...state.settings,
-                    security: {
-                        enabled: true,
-                        pin,
-                        securityQuestion,
-                        securityAnswer
-                    }
-                },
-                isLocked: false
-            })),
+            setPin: (pin, securityQuestion, securityAnswer) => {
+                set((state) => {
+                    const newSettings = {
+                        ...state.settings,
+                        security: {
+                            enabled: true,
+                            pin,
+                            securityQuestion,
+                            securityAnswer
+                        }
+                    };
+
+                    // Persist to storage adapter immediately
+                    StorageFactory.getAdapter(newSettings.storageMode as any).then(adapter => adapter.saveSettings(newSettings));
+
+                    return {
+                        settings: newSettings,
+                        isLocked: false
+                    };
+                });
+            },
             unlock: () => {
                 sessionStorage.setItem('finance_app_unlocked', 'true');
                 set({ isLocked: false });
@@ -282,6 +348,17 @@ export const useStore = create<AppState>()(
                 try {
                     const rows = await service.fetchSheetData(settings.googleSheets.spreadsheetId);
                     const existingTransactions = get().transactions;
+                    // Create a registry of existing transaction signatures to prevent duplicates
+                    // Signature format: "YYYY-M-D|AMOUNT|TYPE|DESCRIPTION"
+                    const processedSignatures = new Set<string>();
+
+                    // Populate with existing transactions
+                    existingTransactions.forEach(t => {
+                        const tDate = new Date(t.date);
+                        // Normalized signature
+                        const signature = `${tDate.getFullYear()}-${tDate.getMonth()}-${tDate.getDate()}|${t.amount}|${t.type}|${(t.description || '').toLowerCase().trim()}`;
+                        processedSignatures.add(signature);
+                    });
 
                     let addedCount = 0;
 
@@ -291,12 +368,11 @@ export const useStore = create<AppState>()(
                         if (isNaN(date.getTime())) return;
 
                         const dateStr = date.toISOString();
-                        const amount = parseFloat(row.amount.replace(/[^0-9.-]+/g, "")); // simple cleanup
+                        const amount = parseFloat(row.amount.replace(/[^0-9.-]+/g, ""));
 
                         if (isNaN(amount)) return;
 
                         // 2. Normalize Data
-                        // Handle "Income" or "Expense" case insensitively
                         let type: 'income' | 'expense' = 'expense';
                         if (row.type.toLowerCase().includes('income')) {
                             type = 'income';
@@ -305,27 +381,23 @@ export const useStore = create<AppState>()(
                         const category = row.category.trim();
                         const note = row.note.trim();
 
-                        // 3. Deduplicate
-                        const isDuplicate = existingTransactions.some(t => {
-                            const tDate = new Date(t.date);
-                            const matchDate = tDate.getFullYear() === date.getFullYear() &&
-                                tDate.getMonth() === date.getMonth() &&
-                                tDate.getDate() === date.getDate();
+                        // 3. Generate Signature for current row
+                        // Use the same normalization logic as above
+                        const signature = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}|${amount}|${type}|${note.toLowerCase().trim()}`;
 
-                            // Close match check
-                            return matchDate && t.amount === amount && t.type === type && t.note === note;
-                        });
-
-                        if (!isDuplicate) {
+                        // 4. Check & Add
+                        if (!processedSignatures.has(signature)) {
                             addTransaction({
                                 id: uuidv4(),
                                 date: dateStr,
                                 amount: amount,
                                 type: type,
                                 category: category,
-                                description: note, // Map sheet 'note' to app 'description'
-                                spaceId: settings.activeSpace || 'personal', // Default to active space
+                                description: note,
+                                spaceId: settings.activeSpace || 'personal',
                             });
+                            // Add to set so we don't add it again if it appears twice in the sheet
+                            processedSignatures.add(signature);
                             addedCount++;
                         }
                     });
@@ -380,6 +452,7 @@ export const useStore = create<AppState>()(
                     for (const t of transactions) await adapter.saveTransaction(t);
                     for (const a of assets) await adapter.saveAsset(a);
                     for (const b of budgets) await adapter.saveBudget(b);
+                    for (const r of get().reminders) await adapter.saveReminder(r);
                     await adapter.saveSettings(settings);
 
                     set({ syncStatus: 'idle' });
@@ -403,12 +476,14 @@ export const useStore = create<AppState>()(
                             adapter.getTransactions(),
                             adapter.getAssets(),
                             adapter.getBudgets(),
+                            adapter.getReminders(),
                             adapter.getSettings()
-                        ]).then(([transactions, assets, budgets, remoteSettings]) => {
+                        ]).then(([transactions, assets, budgets, reminders, remoteSettings]) => {
                             set({
                                 transactions,
                                 assets,
                                 budgets,
+                                reminders,
                                 settings: remoteSettings ? { ...get().settings, ...remoteSettings } : get().settings
                             });
                         }).catch(err => console.error('Failed to refresh data:', err));
@@ -504,6 +579,7 @@ export const useStore = create<AppState>()(
                 budgets: state.budgets,
                 monthlySummaries: state.monthlySummaries,
                 chatMessages: state.chatMessages,
+                reminders: state.reminders,
                 settings: state.settings,
             }),
         }

@@ -10,7 +10,7 @@
  */
 
 import type { StorageAdapter, AppData } from './StorageAdapter';
-import type { Transaction, Asset, Budget, AppSettings } from '../../types';
+import type { Transaction, Asset, Budget, AppSettings, Reminder } from '../../types';
 
 export class LocalStorageAdapter implements StorageAdapter {
     private readonly STORAGE_KEY = 'personal-finance-app-v2';
@@ -163,6 +163,32 @@ export class LocalStorageAdapter implements StorageAdapter {
         await this.saveData({ settings });
     }
 
+    // ===== Reminders =====
+
+    async getReminders(): Promise<Reminder[]> {
+        const data = this.loadData();
+        return data.reminders || [];
+    }
+
+    async saveReminder(reminder: Reminder): Promise<void> {
+        const reminders = await this.getReminders();
+        const index = reminders.findIndex(r => r.id === reminder.id);
+
+        if (index >= 0) {
+            reminders[index] = reminder;
+        } else {
+            reminders.push(reminder);
+        }
+
+        await this.saveData({ reminders });
+    }
+
+    async deleteReminder(id: string): Promise<void> {
+        const reminders = await this.getReminders();
+        const filtered = reminders.filter(r => r.id !== id);
+        await this.saveData({ reminders: filtered });
+    }
+
     // ===== Sync Management =====
 
     async getLastSyncTime(): Promise<Date | null> {
@@ -228,6 +254,7 @@ export class LocalStorageAdapter implements StorageAdapter {
             transactions: [],
             assets: [],
             budgets: [],
+            reminders: [],
             settings: null
         };
     }

@@ -7,11 +7,13 @@ import { BudgetProgressCard } from './BudgetProgressCard';
 
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ReportExportModal } from './ReportExportModal';
+import { Download, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export function DashboardPage() {
     const { t } = useTranslation();
     const [date, setDate] = useState(new Date());
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     return (
         <div className="p-4 md:p-6 space-y-6">
@@ -20,36 +22,47 @@ export function DashboardPage() {
                     <h2 className="text-3xl font-bold tracking-tight">{t.dashboard.title}</h2>
                     <p className="text-muted-foreground mt-2">{t.dashboard.subtitle}</p>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end gap-2 bg-card border rounded-md p-1 shadow-sm">
+
+                <div className="flex gap-2 items-center">
                     <button
-                        onClick={() => {
-                            const d = new Date(date);
-                            d.setFullYear(d.getFullYear() - 1);
-                            setDate(d);
-                        }}
-                        className="p-2 hover:bg-muted rounded-md transition-colors"
-                        title="Previous Year"
+                        onClick={() => setIsReportModalOpen(true)}
+                        className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-sm font-medium"
                     >
-                        <ArrowLeft className="h-4 w-4" />
+                        <Download className="w-4 h-4" />
+                        <span className="hidden sm:inline">Export Report</span>
                     </button>
-                    <span className="min-w-[100px] sm:min-w-[140px] text-center font-medium">
-                        {date.getFullYear()}
-                    </span>
-                    <button
-                        onClick={() => {
-                            const now = new Date();
-                            const d = new Date(date);
-                            d.setFullYear(d.getFullYear() + 1);
-                            // Prevent going to future year
-                            if (d.getFullYear() > now.getFullYear()) return;
-                            setDate(d);
-                        }}
-                        disabled={date.getFullYear() >= new Date().getFullYear()}
-                        className="p-2 hover:bg-muted rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                        title="Next Year"
-                    >
-                        <ArrowRight className="h-4 w-4" />
-                    </button>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-2 bg-card border rounded-md p-1 shadow-sm">
+                        <button
+                            onClick={() => {
+                                const d = new Date(date);
+                                d.setFullYear(d.getFullYear() - 1);
+                                setDate(d);
+                            }}
+                            className="p-2 hover:bg-muted rounded-md transition-colors"
+                            title="Previous Year"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </button>
+                        <span className="min-w-[100px] sm:min-w-[140px] text-center font-medium">
+                            {date.getFullYear()}
+                        </span>
+                        <button
+                            onClick={() => {
+                                const now = new Date();
+                                const d = new Date(date);
+                                d.setFullYear(d.getFullYear() + 1);
+                                // Prevent going to future year
+                                if (d.getFullYear() > now.getFullYear()) return;
+                                setDate(d);
+                            }}
+                            disabled={date.getFullYear() >= new Date().getFullYear()}
+                            className="p-2 hover:bg-muted rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                            title="Next Year"
+                        >
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -94,6 +107,8 @@ export function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {isReportModalOpen && <ReportExportModal onClose={() => setIsReportModalOpen(false)} />}
         </div>
     );
 }

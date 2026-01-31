@@ -17,6 +17,7 @@ export function AssetForm({ onClose, initialData, suggestedType, group, mode = '
 
     // Initialize state directly from props
     const [name, setName] = useState(initialData?.name || '');
+    const [description, setDescription] = useState(initialData?.description || '');
 
     const [type, setType] = useState<AssetType>(
         fixedType || (initialData?.type) || suggestedType || (group === 'equity' ? 'Cash' : 'payable')
@@ -100,7 +101,8 @@ export function AssetForm({ onClose, initialData, suggestedType, group, mode = '
             bucket: ['payable', 'loan', 'credit'].includes(type) ? 'payable' : ((settings.categories?.investment || []).includes(type) || type === 'investment' ? 'investment' : 'cash'),
             lastUpdated: new Date().toISOString(),
             cafefUrl: cafefUrl || undefined,
-            goldCity: type === 'Gold' ? 'Hà Nội' : undefined
+            goldCity: type === 'Gold' ? 'Hà Nội' : undefined,
+            description: description || undefined
         };
 
         if (initialData) {
@@ -130,6 +132,17 @@ export function AssetForm({ onClose, initialData, suggestedType, group, mode = '
                             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                             placeholder={isSimpleForm ? "e.g., Bank Name" : "e.g., AAPL"}
                             required
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(Optional)</span></label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                            placeholder="Add details about this asset..."
+                            rows={2}
                         />
                     </div>
 

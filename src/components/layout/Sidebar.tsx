@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Wallet, PieChart, Target, Settings, DollarSign, TrendingUp, BookOpen, ChevronDown, ChevronRight, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Wallet, PieChart, Target, Settings, DollarSign, TrendingUp, BookOpen, ChevronDown, ChevronRight, Briefcase, Bell } from 'lucide-react';
 import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
@@ -44,6 +44,7 @@ export function Sidebar({ className, onClose }: SidebarProps) {
             ]
         },
         { icon: Target, label: t.budgets.title, path: '/budgets' },
+        { icon: Bell, label: 'Reminders', path: '/reminders' },
         { icon: Settings, label: t.settings.title, path: '/settings' },
     ];
 

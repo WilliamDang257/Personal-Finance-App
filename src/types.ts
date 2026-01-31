@@ -45,6 +45,7 @@ export interface Asset {
     lastUpdated: string;
     cafefUrl?: string; // CafeF.vn URL for Vietnamese stock price auto-update
     goldCity?: 'Hà Nội' | 'Đà Nẵng' | 'TP.HCM'; // City for gold price (default: Hà Nội)
+    description?: string;
 }
 
 export interface BudgetItem {
@@ -98,6 +99,7 @@ export interface ChatSettings {
     provider: 'gemini';
     apiKey?: string;
     enableProactive: boolean;
+    exportLegacyData?: boolean;
 }
 
 export interface AppSettings {
@@ -130,4 +132,22 @@ export interface AppSettings {
         sheetName?: string;
         lastSynced?: string;
     };
+    notifications?: {
+        enabled: boolean;
+    };
+}
+
+export interface Reminder {
+    id: string;
+    title: string;
+    description: string;
+    amount?: number;
+    date: string; // ISO Date string for the next occurrence
+    time: string; // HH:mm format
+    isRecurring: boolean;
+    frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    category?: string;
+    type: 'payment' | 'note';
+    spaceId: string;
+    isCompleted: boolean;
 }

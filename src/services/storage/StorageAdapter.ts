@@ -8,12 +8,12 @@
  * - Hybrid: Local + Firebase for best performance
  */
 
-import type { Transaction, Asset, Budget, AppSettings } from '../../types';
+import type { Transaction, Asset, Budget, AppSettings, Reminder } from '../../types';
 
 /**
  * Storage modes available
  */
-export type StorageMode = 'local' | 'google-sheets' | 'firebase' | 'hybrid';
+export type StorageMode = 'local' | 'google-sheets' | 'firebase';
 
 /**
  * Wrapper for syncable documents with metadata
@@ -161,6 +161,12 @@ export interface StorageAdapter {
      * @returns Function to unsubscribe from changes
      */
     onDataChanged(callback: () => void): () => void;
+
+    // ===== Reminders =====
+
+    getReminders(): Promise<Reminder[]>;
+    saveReminder(reminder: Reminder): Promise<void>;
+    deleteReminder(id: string): Promise<void>;
 }
 
 /**
@@ -170,5 +176,6 @@ export interface AppData {
     transactions: Transaction[];
     assets: Asset[];
     budgets: Budget[];
+    reminders: Reminder[];
     settings: AppSettings | null;
 }

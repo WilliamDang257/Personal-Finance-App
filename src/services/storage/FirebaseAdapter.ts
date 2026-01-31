@@ -24,7 +24,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import type { StorageAdapter } from './StorageAdapter';
-import type { Transaction, Asset, Budget, AppSettings } from '../../types';
+import type { Transaction, Asset, Budget, AppSettings, Reminder } from '../../types';
 
 export class FirebaseAdapter implements StorageAdapter {
     private userId: string | null = null;
@@ -45,7 +45,18 @@ export class FirebaseAdapter implements StorageAdapter {
         }
 
         // Wait for auth
-        const user = auth.currentUser;
+        // Wait for auth state to resolve using a Promise
+        const user = await new Promise<any>((resolve) => {
+            if (auth.currentUser) {
+                resolve(auth.currentUser);
+                return;
+            }
+            const unsubscribe = auth.onAuthStateChanged((u) => {
+                unsubscribe();
+                resolve(u);
+            });
+        });
+
         if (!user) {
             throw new Error('User must be authenticated to use Firebase storage');
         }
@@ -268,6 +279,40 @@ export class FirebaseAdapter implements StorageAdapter {
             ...settings,
             updatedAt: serverTimestamp()
         });
+    }
+
+    // ===== Reminders =====
+
+    async getReminders(): Promise<Reminder[]> {
+        this.ensureReady();
+
+        const snapshot = await getDocs(
+            collection(db, `users/${this.userId}/reminders`)
+        );
+
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Reminder));
+    }
+
+    async saveReminder(reminder: Reminder): Promise<void> {
+        this.ensureReady();
+
+        const docRef = doc(db, `users/${this.userId}/reminders/${reminder.id}`);
+
+        await setDoc(docRef, {
+            ...reminder,
+            updatedAt: serverTimestamp(),
+            deviceId: this.deviceId
+        });
+    }
+
+    async deleteReminder(id: string): Promise<void> {
+        this.ensureReady();
+
+        const docRef = doc(db, `users/${this.userId}/reminders/${id}`);
+        await deleteDoc(docRef);
     }
 
     // ===== Sync Management =====

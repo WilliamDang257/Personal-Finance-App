@@ -11,4 +11,3 @@ export type { StorageAdapter, StorageMode, SyncableDocument, AppData } from './S
 // Adapters
 export { LocalStorageAdapter } from './LocalStorageAdapter';
 export { FirebaseAdapter } from './FirebaseAdapter';
-export { HybridAdapter } from './HybridAdapter';

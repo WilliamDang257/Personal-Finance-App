@@ -8,7 +8,7 @@
 import type { StorageAdapter, StorageMode } from './StorageAdapter';
 import { LocalStorageAdapter } from './LocalStorageAdapter';
 import { FirebaseAdapter } from './FirebaseAdapter';
-import { HybridAdapter } from './HybridAdapter';
+
 
 export class StorageFactory {
     private static instance: StorageAdapter | null = null;
@@ -42,8 +42,6 @@ export class StorageFactory {
                 return new LocalStorageAdapter();
             case 'firebase':
                 return new FirebaseAdapter();
-            case 'hybrid':
-                return new HybridAdapter();
             default:
                 console.warn(`Unknown storage mode: ${mode}, falling back to local`);
                 return new LocalStorageAdapter();

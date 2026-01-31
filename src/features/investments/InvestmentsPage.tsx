@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import { AssetAllocationChart } from '../assets/AssetAllocationChart';
-import { TrendingUp, Building2, Coins, Briefcase, ExternalLink, Plus, History, ArrowUpRight, ArrowDownRight, Pencil, Trash2 } from 'lucide-react';
+import { TrendingUp, Building2, Coins, Briefcase, Plus, History, ArrowUpRight, ArrowDownRight, Pencil, Trash2 } from 'lucide-react';
 import { AssetForm } from '../assets/AssetForm';
 import type { Asset } from '../../types';
 
@@ -173,16 +173,7 @@ export function InvestmentsPage() {
                     <p className="text-muted-foreground mt-2">{t.investments.subtitle}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <a
-                        href="https://banggia.dnse.com.vn/vn30"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border bg-background hover:bg-muted text-foreground transition-all"
-                        title={t.investments.marketData}
-                    >
-                        <ExternalLink className="h-4 w-4 text-blue-600" />
-                        <span className="hidden sm:inline">{t.investments.marketData}</span>
-                    </a>
+
                     <button
                         onClick={handleUpdatePrices}
                         disabled={isUpdatingPrices}

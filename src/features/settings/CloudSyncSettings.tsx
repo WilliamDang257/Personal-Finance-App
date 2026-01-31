@@ -8,10 +8,10 @@ import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useStore } from '../../hooks/useStore';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
-import { Cloud, Server, Database, ShieldCheck, AlertCircle, RefreshCw, WifiOff } from 'lucide-react';
+import { Cloud, Server, ShieldCheck, AlertCircle, RefreshCw, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-type StorageOption = 'local' | 'cloud' | 'hybrid';
+type StorageOption = 'local' | 'cloud';
 
 export function CloudSyncSettings() {
     const { settings, updateSettings, syncData, migrateToCloud, syncStatus, lastSyncError } = useStore();
@@ -42,7 +42,7 @@ export function CloudSyncSettings() {
             await updateSettings({ storageMode: mode });
 
             // If switching TO cloud/hybrid FROM local, ask to migrate
-            if (currentMode === 'local' && (mode === 'cloud' || mode === 'hybrid')) {
+            if (currentMode === 'local' && mode === 'cloud') {
                 // In a real app we might show a nice dialog. For now, confirm.
                 if (window.confirm('Do you want to upload your existing local data to the cloud?')) {
                     await migrateToCloud();
@@ -122,39 +122,11 @@ export function CloudSyncSettings() {
                     </div>
                     <h4 className="font-semibold mb-1">Cloud Sync</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                        Data stored securely in cloud. Real-time sync across all your devices.
+                        Data stored securely in cloud. Works offline and syncs automatically across devices.
                     </p>
                 </button>
 
-                {/* Hybrid Mode */}
-                <button
-                    onClick={() => handleModeChange('hybrid')}
-                    disabled={loading}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${currentMode === 'hybrid'
-                        ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-border hover:border-gray-300 dark:hover:border-gray-700 bg-card'
-                        }`}
-                >
-                    <div className="flex justify-between items-start mb-3">
-                        <div className={`p-2 rounded-lg ${currentMode === 'hybrid' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                            <Database className="h-5 w-5" />
-                        </div>
-                        {currentMode === 'hybrid' && (
-                            <div className="p-1 bg-primary text-white rounded-full">
-                                <ShieldCheck className="h-3 w-3" />
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">Hybrid Mode</h4>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                            BEST
-                        </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                        Fast local access + automatic cloud backup. Best of both worlds.
-                    </p>
-                </button>
+
             </div>
 
             {/* Sync Status Details */}
@@ -181,7 +153,7 @@ export function CloudSyncSettings() {
                         <div className="flex justify-between text-sm mb-2">
                             <span className="text-muted-foreground">Status:</span>
                             <span className={`font-medium ${!isOnline ? 'text-amber-600' :
-                                    syncStatus === 'error' ? 'text-destructive' : 'text-foreground'
+                                syncStatus === 'error' ? 'text-destructive' : 'text-foreground'
                                 }`}>
                                 {!isOnline ? 'Waiting for connection...' : syncStatus === 'idle' ? 'Up to date' : syncStatus === 'syncing' ? 'Syncing...' : 'Error'}
                             </span>
@@ -224,7 +196,23 @@ export function CloudSyncSettings() {
                 </div>
             )}
 
-            {/* Warning when switching from Local to Cloud */}
+            {/* Warning when Logged In but Local */}
+            {currentMode === 'local' && isAuthenticated && (
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded-lg flex items-start gap-3">
+                    <div className="p-1 bg-orange-100 dark:bg-orange-800 rounded-full shrink-0">
+                        <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-medium text-orange-800 dark:text-orange-300">Sync Paused</h4>
+                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                            You are signed in, but data storage is set to <strong>Local Only</strong>.
+                            Switch to <strong>Cloud Sync</strong> to sync your data across devices.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Privacy Note Warning */}
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
@@ -232,11 +220,37 @@ export function CloudSyncSettings() {
                         <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Privacy Note</h4>
                         <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1 leading-relaxed">
                             <strong>Local Only:</strong> Data is stored only in your browser. Clearing cache deletes data.<br />
-                            <strong>Cloud/Hybrid:</strong> Data is stored securely in your private cloud database.
+                            <strong>Cloud Sync:</strong> Data is stored securely in your private cloud database.
                         </p>
                     </div>
                 </div>
             </div>
+
+            {/* Troubleshooting Section */}
+            {currentMode === 'cloud' && (
+                <div className="mt-2 pt-4 border-t flex justify-end">
+                    <button
+                        onClick={async () => {
+                            if (window.confirm('This will upload all currently visible data to the cloud. This helps if your other devices are not seeing your data.\n\nContinue?')) {
+                                setLoading(true);
+                                try {
+                                    await migrateToCloud();
+                                    alert('Upload complete!');
+                                } catch (e) {
+                                    alert('Upload failed. See console.');
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }
+                        }}
+                        disabled={loading}
+                        className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+                    >
+                        <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                        Troubleshoot: Force upload data to cloud
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

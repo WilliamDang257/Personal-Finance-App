@@ -219,16 +219,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
 
 
                 {/* Hero Stats */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-xl border bg-card p-5 shadow-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                            <Wallet className="h-4 w-4" />
-                            <span className="text-xs font-medium uppercase tracking-wider">{t.assets.netWorth}</span>
-                        </div>
-                        <div className="text-2xl font-bold text-foreground">
-                            {formatter.format(stats.netWorth)}
-                        </div>
-                    </div>
+                <div className="grid gap-4 md:grid-cols-2">
 
                     {activeGroup === 'equity' ? (
                         <>

@@ -21,7 +21,7 @@ export function TransactionsPage() {
 
     const formatter = new Intl.NumberFormat(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'en-US'), {
         style: 'currency',
-        currency: settings.currency,
+        currency: settings.currency || 'VND',
     });
 
     const activeSpace = settings.activeSpace;

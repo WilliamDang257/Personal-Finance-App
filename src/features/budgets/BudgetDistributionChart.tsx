@@ -31,7 +31,7 @@ export function BudgetDistributionChart({ year }: BudgetDistributionChartProps) 
 
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: settings.currency,
+        currency: settings.currency || 'VND',
         maximumFractionDigits: 0,
     });
 

@@ -24,66 +24,54 @@ git add .
 git commit -m "Initial commit"
 ```
 
-## 3. Option 1: Web Deployment (Recommended)
-The easiest way to share the app is to deploy it to **Vercel** or **Netlify**. Both are free for personal use and work seamlessly with Vite apps.
+## 3. Firebase Deployment (Current Setup)
 
-### Using Vercel
-1.  Create a fresh repository on [GitHub](https://github.com/new).
-2.  Push your code to GitHub:
-    ```bash
-    git branch -M main
-    git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-    git push -u origin main
-    ```
-3.  Go to [Vercel](https://vercel.com) and sign up/log in.
-4.  Click **"Add New..."** -> **"Project"**.
-5.  Import your GitHub repository.
-6.  Vercel will detect "Vite" automatically. Click **Deploy**.
-7.  Once done, you will get a live URL (e.g., `https://your-finance-app.vercel.app`) to share.
+Your project is configured to use **Firebase Hosting** and **Firestore**.
 
-### Using Netlify
-1.  Push your code to GitHub (same as above).
-2.  Go to [Netlify](https://netlify.com) and sign up/log in.
-3.  Click **"Add new site"** -> **"Import an existing project"**.
-4.  Connect GitHub and select your repository.
+### Standard Deployment
+To deploy your application updates:
 
-### Alternative: Netlify "Drag and Drop" (No Git required)
-If you don't want to use Git, you can do a manual deployment:
-1.  Run `npm run build` in your terminal.
-2.  This generates a `dist` folder in your project.
-3.  Go to [app.netlify.com/drop](https://app.netlify.com/drop).
-4.  Drag your `dist` folder onto the page.
-5.  It will be deployed immediately!
-*Note: To update the app later, you must rebuild and drag the new folder again manually.*
-
-
-## 4. Option 2: Local Build (Advanced)
-If you prefer not to host it online or want to run it locally without development mode:
-
-1.  Build the project:
+1.  **Build the application**:
+    Always build first to ensure the latest code is ready for upload.
     ```bash
     npm run build
     ```
-2.  This creates a `dist` folder containing the optimized app.
-3.  To preview it locally, run:
+
+2.  **Deploy everything**:
+    This updates the website, security rules, and database indexes.
     ```bash
-    npm run preview
-    ```
-    Or use a static file server like `serve`:
-    ```bash
-    npx serve dist
+    npx firebase deploy
     ```
 
+### Targeted Deployment
+If you only want to update specific parts:
 
-> **Note**: You cannot simply open `dist/index.html` in your browser due to security restrictions (CORS/Modules). You must use a local web server as shown above.
+-   **Update Website Only** (Fastest for UI changes):
+    ```bash
+    npx firebase deploy --only hosting
+    ```
 
-## 5. Troubleshooting
-### Error: "Author identity unknown"
-If you see this error when running `git commit`, it means Git doesn't know who you are yet. Run these two commands in your terminal (replace with your info):
+-   **Update Security Rules Only** (If you changed `firestore.rules`):
+    ```bash
+    npx firebase deploy --only firestore:rules
+    ```
 
+## 4. Troubleshooting
+
+### "Insufficient Permissions" or Sync Errors
+If users report sync errors, ensure the latest security rules are deployed:
 ```bash
-git config --global user.email "you@example.com"
-git config --global user.name "Your Name"
+npx firebase deploy --only firestore:rules
 ```
-Then try the `git commit` command again.
+
+### "FirebaseAdapter not initialized"
+This usually means a race condition in code. 
+-   **Fix**: Ensure `FirebaseAdapter.ts` waits for `auth.onAuthStateChanged` before initializing.
+-   **Force Sync**: Go to Settings > Cloud & Sync > Troubleshoot to force an upload of local data.
+
+## 5. Local Preview
+To preview the production build locally before deploying:
+```bash
+npm run preview
+```
 
