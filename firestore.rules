@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== Helper Functions =====
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if data is valid
+    function isValidData() {
+      return request.resource.data != null;
+    }
+    
+    // ===== User Data =====
+    
+    // All user data is under /users/{userId}/
+    match /users/{userId} {
+      // Only allow access if user is the owner
+      allow read, write: if isOwner(userId);
+      
+      // Transactions collection
+      match /transactions/{transactionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidData();
+        allow update: if isOwner(userId) && isValidData();
+        allow delete: if isOwner(userId);
+      }
+      
+      // Assets collection
+      match /assets/{assetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidData();
+        allow update: if isOwner(userId) && isValidData();
+        allow delete: if isOwner(userId);
+      }
+      
+      // Budgets collection
+      match /budgets/{budgetId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidData();
+        allow update: if isOwner(userId) && isValidData();
+        allow delete: if isOwner(userId);
+      }
+      
+      // Settings document
+      match /settings/main {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId) && isValidData();
+      }
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

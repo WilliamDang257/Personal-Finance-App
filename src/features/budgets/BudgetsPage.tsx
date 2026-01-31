@@ -82,7 +82,7 @@ export function BudgetsPage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-6">
             {/* ... Header ... */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -203,7 +203,7 @@ export function BudgetsPage() {
                                                     <span className="font-medium">{formatter.format(sub.amount)}</span>
                                                     <button
                                                         onClick={() => onRemoveSubItem(item, sub.id)}
-                                                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                                                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
                                                     >
                                                         <Trash2 className="h-3 w-3" />
                                                     </button>

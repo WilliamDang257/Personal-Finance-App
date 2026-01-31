@@ -14,12 +14,36 @@ export function BudgetForm({ onClose, initialData, year }: BudgetFormProps) {
     const { addBudget, updateBudget, settings, budgets } = useStore();
     const [category, setCategory] = useState('');
     const [amount, setAmount] = useState('');
+    const [displayAmount, setDisplayAmount] = useState(''); // Formatted display value
     // const [period, setPeriod] = useState<'month' | 'year'>('month'); // Removed state
+
+    // Format number with thousand separators
+    const formatNumber = (value: string): string => {
+        if (!value) return '';
+        const num = value.replace(/[^\d]/g, ''); // Remove non-digits
+        if (!num) return '';
+        return parseInt(num).toLocaleString('en-US'); // Format with commas
+    };
+
+    // Handle amount input with live formatting
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target.value;
+        // Remove all non-digits
+        const numericValue = input.replace(/[^\d]/g, '');
+
+        // Update actual value (numbers only)
+        setAmount(numericValue);
+
+        // Update display value (formatted)
+        setDisplayAmount(formatNumber(numericValue));
+    };
 
     useEffect(() => {
         if (initialData) {
             setCategory(initialData.category);
-            setAmount(initialData.amount.toString());
+            const amountStr = initialData.amount.toString();
+            setAmount(amountStr);
+            setDisplayAmount(formatNumber(amountStr));
             // setPeriod(initialData.period);
         }
     }, [initialData]);
@@ -91,12 +115,11 @@ export function BudgetForm({ onClose, initialData, year }: BudgetFormProps) {
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Limit Amount ({settings.currency})</label>
                         <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            type="text"
+                            value={displayAmount}
+                            onChange={handleAmountChange}
+                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-semibold"
                             placeholder="0"
-                            step="0.01"
                             required
                         />
                     </div>

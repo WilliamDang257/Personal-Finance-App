@@ -2,7 +2,7 @@
 export const GOOGLE_OAUTH_CONFIG = {
     // Replace this with your actual Google OAuth Client ID
     // Get this from: https://console.cloud.google.com/apis/credentials
-    CLIENT_ID: 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com',
+    CLIENT_ID: '693269285370-tfbi5lgopb5m5o6cm8f435bcbaqp9dpe.apps.googleusercontent.com',
 
     // Scopes required for Google Sheets integration
     SCOPES: 'https://www.googleapis.com/auth/spreadsheets.readonly',

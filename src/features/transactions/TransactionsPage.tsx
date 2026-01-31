@@ -24,7 +24,6 @@ export function TransactionsPage() {
         currency: settings.currency,
     });
 
-    // Reset to current month on open if needed, but keeping it simple for now
     const activeSpace = settings.activeSpace;
 
     // Filter transactions
@@ -88,7 +87,7 @@ export function TransactionsPage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-6">
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">{t.transactions.title}</h2>
                 <p className="text-muted-foreground mt-2">{t.transactions.subtitle}</p>
@@ -129,7 +128,7 @@ export function TransactionsPage() {
 
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4">
                         {/* Month Picker */}
-                        <div className="flex items-center gap-2 bg-card border rounded-md p-1 shadow-sm">
+                        <div className="flex items-center gap-2 bg-card border rounded-md p-1 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
                             <button
                                 onClick={() => {
                                     const d = new Date(selectedMonth);
@@ -158,12 +157,12 @@ export function TransactionsPage() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             {settings.googleSheets?.enabled && (
                                 <button
                                     onClick={handleSync}
                                     disabled={isSyncing}
-                                    className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                 >
                                     <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                                     {isSyncing ? 'Syncing...' : 'Sync'}
@@ -171,7 +170,7 @@ export function TransactionsPage() {
                             )}
                             <button
                                 onClick={handleAddNew}
-                                className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'income' ? 'bg-emerald-600' : 'bg-red-600'
+                                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring ${activeTab === 'income' ? 'bg-emerald-600' : 'bg-red-600'
                                     }`}
                             >
                                 <Plus className="h-4 w-4" />
@@ -195,14 +194,14 @@ export function TransactionsPage() {
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                     {/* Category Filter */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1 sm:flex-none">
                         <Filter className="h-4 w-4 text-muted-foreground" />
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring max-w-[150px]"
+                            className="w-full sm:w-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring max-w-[150px]"
                         >
                             <option value="all">{t.transactions.allCategories}</option>
                             {uniqueCategories.map(cat => (
@@ -215,7 +214,7 @@ export function TransactionsPage() {
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'amount')}
-                        className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="flex-1 sm:flex-none w-full sm:w-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                         <option value="date-desc">{t.transactions.newestFirst}</option>
                         <option value="date-asc">{t.transactions.oldestFirst}</option>
@@ -224,8 +223,50 @@ export function TransactionsPage() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+            {/* Mobile List View */}
+            <div className="md:hidden space-y-4">
+                {filteredTransactions.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                        {t.transactions.noTransactions} {selectedMonth.toLocaleString(settings.language === 'vi' ? 'vi-VN' : (settings.language === 'ko' ? 'ko-KR' : 'default'), { month: 'long' })}.
+                    </div>
+                ) : (
+                    filteredTransactions.map(transaction => (
+                        <div key={transaction.id} className="bg-card p-4 rounded-lg border shadow-sm flex flex-col gap-2">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-medium text-foreground">{transaction.description}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {new Date(transaction.date).toLocaleDateString()} • {transaction.category}
+                                    </p>
+                                </div>
+                                <p className={cn(
+                                    "font-semibold",
+                                    transaction.type === 'income' ? 'text-emerald-500' : 'text-red-500'
+                                )}>
+                                    {formatter.format(transaction.amount)}
+                                </p>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-2 border-t pt-2">
+                                <button
+                                    onClick={() => handleEdit(transaction)}
+                                    className="text-xs font-medium text-muted-foreground flex items-center gap-1 hover:text-primary transition-colors"
+                                >
+                                    <Pencil className="h-3 w-3" /> Edit
+                                </button>
+                                <button
+                                    onClick={() => removeTransaction(transaction.id)}
+                                    className="text-xs font-medium text-muted-foreground flex items-center gap-1 hover:text-destructive transition-colors"
+                                >
+                                    <Trash2 className="h-3 w-3" /> Delete
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block rounded-xl border bg-card shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="border-b bg-muted/50">

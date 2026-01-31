@@ -58,11 +58,19 @@ interface AppState {
 
     // Google Sheets Sync
     syncTransactionsFromSheets: (silent?: boolean) => Promise<void>;
+
+    // Cloud Sync
+    syncStatus: 'idle' | 'syncing' | 'error';
+    lastSyncError: string | null;
+    syncData: () => Promise<void>;
+    migrateToCloud: () => Promise<void>;
+    initializeSync: () => void;
 }
 
 import CATEGORIES from '../data/categories.json';
 import { GoogleSheetsService } from '../services/google/googleSheetsService';
 import { v4 as uuidv4 } from 'uuid';
+import { StorageFactory } from '../services/storage/storageFactory';
 
 // ... (AppState interface)
 
@@ -80,6 +88,7 @@ export const useStore = create<AppState>()(
                 currency: 'VND',
                 language: 'en',
                 theme: 'light', // Default will be overridden by persist if exists
+                storageMode: 'local',
                 activeSpace: 'personal', // Default ID
                 spaces: [
                     { id: 'personal', name: 'Personal' },
@@ -100,29 +109,60 @@ export const useStore = create<AppState>()(
                 }
             },
 
+            // Cloud Sync State
+            syncStatus: 'idle',
+            lastSyncError: null,
+
             // Helper to get full object of active space
             activeSpace: () => {
                 const s = get().settings;
                 return s.spaces.find(sp => sp.id === s.activeSpace) || s.spaces[0];
             },
 
-            addTransaction: (t) => set((state) => ({ transactions: [t, ...state.transactions] })),
-            removeTransaction: (id) => set((state) => ({ transactions: state.transactions.filter((t) => t.id !== id) })),
-            updateTransaction: (t) => set((state) => ({
-                transactions: state.transactions.map((trans) => (trans.id === t.id ? t : trans)),
-            })),
-            addAsset: (a) => set((state) => ({ assets: [...state.assets, a] })),
-            removeAsset: (id) => set((state) => ({ assets: state.assets.filter((a) => a.id !== id) })),
-            updateAsset: (a) => set((state) => ({
-                assets: state.assets.map((asset) => (asset.id === a.id ? a : asset)),
-            })),
+            addTransaction: (t) => {
+                set((state) => ({ transactions: [t, ...state.transactions] }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveTransaction(t));
+            },
+            removeTransaction: (id) => {
+                set((state) => ({ transactions: state.transactions.filter((t) => t.id !== id) }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.deleteTransaction(id));
+            },
+            updateTransaction: (t) => {
+                set((state) => ({
+                    transactions: state.transactions.map((trans) => (trans.id === t.id ? t : trans)),
+                }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.updateTransaction(t));
+            },
+            addAsset: (a) => {
+                set((state) => ({ assets: [...state.assets, a] }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveAsset(a));
+            },
+            removeAsset: (id) => {
+                set((state) => ({ assets: state.assets.filter((a) => a.id !== id) }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.deleteAsset(id));
+            },
+            updateAsset: (a) => {
+                set((state) => ({
+                    assets: state.assets.map((asset) => (asset.id === a.id ? a : asset)),
+                }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.updateAsset(a));
+            },
             addInvestmentLog: (l) => set((state) => ({ investmentLogs: [l, ...state.investmentLogs] })),
             removeInvestmentLog: (id) => set((state) => ({ investmentLogs: state.investmentLogs.filter((l) => l.id !== id) })),
-            addBudget: (b) => set((state) => ({ budgets: [...state.budgets, b] })),
-            removeBudget: (id) => set((state) => ({ budgets: state.budgets.filter((b) => b.id !== id) })),
-            updateBudget: (b) => set((state) => ({
-                budgets: state.budgets.map((budget) => (budget.id === b.id ? b : budget)),
-            })),
+            addBudget: (b) => {
+                set((state) => ({ budgets: [...state.budgets, b] }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.saveBudget(b));
+            },
+            removeBudget: (id) => {
+                set((state) => ({ budgets: state.budgets.filter((b) => b.id !== id) }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.deleteBudget(id));
+            },
+            updateBudget: (b) => {
+                set((state) => ({
+                    budgets: state.budgets.map((budget) => (budget.id === b.id ? b : budget)),
+                }));
+                StorageFactory.getAdapter(get().settings.storageMode as any).then(adapter => adapter.updateBudget(b));
+            },
             addMonthlySummary: (s) => set((state) => ({ monthlySummaries: [...state.monthlySummaries, s] })),
             updateMonthlySummary: (s) => set((state) => ({
                 monthlySummaries: state.monthlySummaries.map((summary) => (summary.id === s.id ? s : summary)),
@@ -132,7 +172,11 @@ export const useStore = create<AppState>()(
             clearChatHistory: (spaceId) => set((state) => ({
                 chatMessages: spaceId ? state.chatMessages.filter((m) => m.spaceId !== spaceId) : []
             })),
-            updateSettings: (s) => set((state) => ({ settings: { ...state.settings, ...s } })),
+            updateSettings: (s) => {
+                set((state) => ({ settings: { ...state.settings, ...s } }));
+                const newSettings = { ...get().settings, ...s };
+                StorageFactory.getAdapter(newSettings.storageMode as any).then(adapter => adapter.saveSettings(newSettings));
+            },
 
             // Space Actions
             addSpace: (name) => set((state) => {
@@ -302,6 +346,74 @@ export const useStore = create<AppState>()(
                     if (!silent) alert("Failed to sync with Google Sheets. Check console for details.");
                 }
             },
+
+            syncData: async () => {
+                set({ syncStatus: 'syncing', lastSyncError: null });
+                try {
+                    const { settings } = get();
+                    if (settings.storageMode === 'local') {
+                        set({ syncStatus: 'idle' });
+                        return;
+                    }
+
+                    const adapter = await StorageFactory.getAdapter(settings.storageMode as any);
+                    await adapter.syncNow();
+                    set({ syncStatus: 'idle' });
+                } catch (error: any) {
+                    console.error('Sync failed:', error);
+                    set({ syncStatus: 'error', lastSyncError: error.message || 'Sync failed' });
+                }
+            },
+
+            migrateToCloud: async () => {
+                set({ syncStatus: 'syncing', lastSyncError: null });
+                try {
+                    const { transactions, assets, budgets, settings } = get();
+
+                    // Force get cloud or hybrid adapter
+                    const targetMode = settings.storageMode === 'local' ? 'hybrid' : settings.storageMode;
+                    const adapter = await StorageFactory.getAdapter(targetMode as any);
+
+                    // Upload all data
+                    // We run these in sequence to avoid overwhelming the connection
+                    for (const t of transactions) await adapter.saveTransaction(t);
+                    for (const a of assets) await adapter.saveAsset(a);
+                    for (const b of budgets) await adapter.saveBudget(b);
+                    await adapter.saveSettings(settings);
+
+                    set({ syncStatus: 'idle' });
+                    alert('Data successfully migrated to cloud!');
+                } catch (error: any) {
+                    console.error('Migration failed:', error);
+                    set({ syncStatus: 'error', lastSyncError: error.message || 'Migration failed' });
+                    throw error;
+                }
+            },
+
+            initializeSync: () => {
+                const { settings } = get();
+                if (settings.storageMode === 'local') return;
+
+                StorageFactory.getAdapter(settings.storageMode as any).then(adapter => {
+                    adapter.onDataChanged(() => {
+                        console.log('Remote data changed, refreshing store...');
+                        // Reload data from adapter
+                        Promise.all([
+                            adapter.getTransactions(),
+                            adapter.getAssets(),
+                            adapter.getBudgets(),
+                            adapter.getSettings()
+                        ]).then(([transactions, assets, budgets, remoteSettings]) => {
+                            set({
+                                transactions,
+                                assets,
+                                budgets,
+                                settings: remoteSettings ? { ...get().settings, ...remoteSettings } : get().settings
+                            });
+                        }).catch(err => console.error('Failed to refresh data:', err));
+                    });
+                });
+            }
         }),
         {
             name: 'finance-app-storage',

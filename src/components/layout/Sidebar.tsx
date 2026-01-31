@@ -5,7 +5,12 @@ import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import { cn } from '../../lib/utils';
 
-export function Sidebar() {
+interface SidebarProps {
+    className?: string;
+    onClose?: () => void;
+}
+
+export function Sidebar({ className, onClose }: SidebarProps) {
     const { startGuide, settings } = useStore();
     const { t } = useTranslation();
     const location = useLocation();
@@ -18,14 +23,20 @@ export function Sidebar() {
         );
     };
 
+    const handleLinkClick = () => {
+        if (onClose) {
+            onClose();
+        }
+    };
+
     const navItems = [
         { icon: LayoutDashboard, label: t.dashboard.title, path: '/' },
         { icon: Wallet, label: t.transactions.title, path: '/transactions' },
         {
             id: 'my-assets',
-            icon: Briefcase, // Using Briefcase for "My Asset" parent
-            label: 'My Asset', // TODO: Add translation
-            path: '#', // Non-navigable parent
+            icon: Briefcase,
+            label: 'My Asset',
+            path: '#',
             children: [
                 { icon: PieChart, label: t.assets.equity, path: '/assets/equity' },
                 { icon: TrendingUp, label: t.investments.title, path: '/investments' },
@@ -41,8 +52,8 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="hidden h-screen w-64 flex-col border-r bg-card text-card-foreground md:flex">
-            <div className="flex h-14 items-center border-b px-4">
+        <aside className={cn("hidden h-screen w-64 flex-col border-r bg-card text-card-foreground md:flex", className)}>
+            <div className="flex h-16 items-center border-b px-6">
                 <span className="text-lg font-bold text-primary">{settings.appName || t.app.title}</span>
             </div>
             <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
@@ -72,10 +83,11 @@ export function Sidebar() {
                                             <NavLink
                                                 key={child.path}
                                                 to={child.path}
+                                                onClick={handleLinkClick}
                                                 className={({ isActive }) =>
                                                     cn(
                                                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
-                                                        isActive ? "bg-primary/10 text-primary border-r-2 border-primary rounded-r-none" : "text-muted-foreground" // Distinct style for children
+                                                        isActive ? "bg-primary/10 text-primary border-r-2 border-primary rounded-r-none" : "text-muted-foreground"
                                                     )
                                                 }
                                             >
@@ -93,6 +105,7 @@ export function Sidebar() {
                         <NavLink
                             key={item.path}
                             to={item.path}
+                            onClick={handleLinkClick}
                             className={({ isActive }) =>
                                 cn(
                                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground",
@@ -108,7 +121,10 @@ export function Sidebar() {
             </nav>
             <div className="p-4 border-t space-y-2">
                 <button
-                    onClick={() => startGuide('main-tour')}
+                    onClick={() => {
+                        startGuide('main-tour');
+                        handleLinkClick();
+                    }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-primary"
                 >
                     <BookOpen className="h-4 w-4" />

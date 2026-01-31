@@ -2,17 +2,19 @@ import { generateDemoData } from '../../data/demoData';
 import { useStore } from '../../hooks/useStore';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { AppSettings } from '../../types';
-import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart, Settings, Tags, Sparkles, Target, Shield } from 'lucide-react';
+import { CloudSyncSettings } from './CloudSyncSettings';
+import { Save, Download, Upload, Moon, Sun, Trash2, FileSpreadsheet, Plus, Database, Heart, Settings, Tags, Sparkles, Target, Shield, Cloud } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { extractSpreadsheetId, GOOGLE_OAUTH_CONFIG } from '../../config/googleSheetsConfig';
 
 export function SettingsPage() {
     const { t } = useTranslation();
     const { settings, updateSettings, transactions, assets, budgets, addTransaction, addAsset, importData, addSpace, updateSpace, removeSpace } = useStore();
-    const [activeTab, setActiveTab] = useState<'general' | 'categories' | 'data' | 'ai'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'storage' | 'categories' | 'data' | 'ai'>('general');
 
     const tabs = [
         { id: 'general', label: t.settings.general, icon: Settings },
+        { id: 'storage', label: 'Cloud & Sync', icon: Cloud },
         { id: 'categories', label: t.settings.categoryManagement, icon: Tags },
         { id: 'data', label: t.settings.dataManagement, icon: Database },
         { id: 'ai', label: 'AI Assistant', icon: Sparkles },
@@ -25,13 +27,13 @@ export function SettingsPage() {
                 <p className="text-muted-foreground mt-2">{t.settings.subtitle}</p>
             </div>
 
-            <div className="flex space-x-1 rounded-xl bg-muted p-1">
+            <div className="flex space-x-1 rounded-xl bg-muted p-1 overflow-x-auto">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as 'general' | 'categories' | 'data' | 'ai')}
+                            onClick={() => setActiveTab(tab.id as 'general' | 'storage' | 'categories' | 'data' | 'ai')}
                             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${activeTab === tab.id
                                 ? 'bg-background text-foreground shadow-sm'
                                 : 'text-muted-foreground hover:bg-background/50 hover:text-foreground'
@@ -51,6 +53,17 @@ export function SettingsPage() {
                         <div className="space-y-6">
                             <BudgetRulesSettings settings={settings} updateSettings={updateSettings} t={t} />
                             <SecuritySettings settings={settings} updateSettings={updateSettings} t={t} />
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'storage' && (
+                    <div className="max-w-4xl">
+                        <div className="rounded-xl border bg-card p-6 shadow-sm">
+                            <CloudSyncSettings />
+                        </div>
+                        <div className="mt-6">
+                            <GoogleSheetsSettings />
                         </div>
                     </div>
                 )}

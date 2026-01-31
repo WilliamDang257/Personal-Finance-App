@@ -146,14 +146,14 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                     return (
                         <div
                             key={asset.id}
-                            className="group flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 hover:bg-muted/50 transition-colors"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="rounded-full bg-secondary/50 p-2.5 text-foreground ring-1 ring-border">
+                                <div className="rounded-full bg-secondary/50 p-2.5 text-foreground ring-1 ring-border shrink-0">
                                     <Icon className="h-4 w-4" />
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold text-sm">{asset.name}</h3>
+                                <div className="min-w-0">
+                                    <h3 className="font-semibold text-sm truncate">{asset.name}</h3>
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                                         <span className="capitalize">{asset.type.replace('_', ' ')}</span>
                                         {asset.quantity && asset.pricePerUnit && (
@@ -166,13 +166,13 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-6 text-right">
+                            <div className="flex items-center justify-between sm:justify-end gap-6 text-right w-full sm:w-auto pl-12 sm:pl-0">
                                 <div>
                                     <div className={`font-medium ${classifyAsset(asset) === 'liabilities' ? 'text-red-600' : 'text-foreground'}`}>
                                         {formatter.format(asset.value)}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => handleEdit(asset)}
                                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-background border border-transparent hover:border-border transition-all"
@@ -202,7 +202,7 @@ export function AssetsPage({ mode = 'equity' }: AssetsPageProps) {
     );
 
     return (
-        <div className="p-6 max-w-5xl mx-auto space-y-8">
+        <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
             <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                     <div>

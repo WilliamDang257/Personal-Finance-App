@@ -43,6 +43,8 @@ export interface Asset {
     spaceId: string;
     bucket: 'cash' | 'investment' | 'receivable' | 'payable';
     lastUpdated: string;
+    cafefUrl?: string; // CafeF.vn URL for Vietnamese stock price auto-update
+    goldCity?: 'Hà Nội' | 'Đà Nẵng' | 'TP.HCM'; // City for gold price (default: Hà Nội)
 }
 
 export interface BudgetItem {
@@ -103,6 +105,7 @@ export interface AppSettings {
     currency: string;
     language: 'en' | 'vi' | 'ko';
     theme: 'light' | 'dark' | 'system' | 'pink' | 'red';
+    storageMode?: 'local' | 'cloud' | 'hybrid';
     activeSpace: string;
     spaces: Space[];
     budgetRules: {

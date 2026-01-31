@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -67,6 +67,7 @@ const TOUR_STEPS: GuideStep[] = [
 
 export function Layout() {
     const { settings } = useStore();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -81,9 +82,25 @@ export function Layout() {
 
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
+            {/* Desktop Sidebar */}
             <Sidebar />
+
+            {/* Mobile Sidebar (Drawer) */}
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-50 flex md:hidden">
+                    <div
+                        className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                    <Sidebar
+                        className="relative z-50 flex h-full w-64 flex-col border-r bg-card shadow-xl animate-in slide-in-from-left duration-300"
+                        onClose={() => setIsMobileMenuOpen(false)}
+                    />
+                </div>
+            )}
+
             <div className="flex flex-1 flex-col overflow-hidden">
-                <Header />
+                <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
                 <main className="flex-1 overflow-y-auto bg-muted/20">
                     <Outlet />
                 </main>

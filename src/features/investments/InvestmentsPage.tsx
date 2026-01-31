@@ -12,6 +12,7 @@ export function InvestmentsPage() {
     const activeSpace = settings.activeSpace;
     const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<Asset | undefined>(undefined);
+    const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
 
     // Form state for adding logs
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -71,6 +72,87 @@ export function InvestmentsPage() {
         setNote('');
     };
 
+    const handleUpdatePrices = async () => {
+        setIsUpdatingPrices(true);
+
+        // Import services
+        const { stockPriceService } = await import('../../services/stocks/StockPriceService');
+        const { goldPriceService } = await import('../../services/stocks/GoldPriceService');
+        const { updateAsset } = useStore.getState();
+
+        // Find all investment assets with price URLs in active space
+        const stocksToUpdate = investmentAssets.filter(a => a.cafefUrl);
+        const goldToUpdate = investmentAssets.filter(a => a.goldCity);
+
+        if (stocksToUpdate.length === 0 && goldToUpdate.length === 0) {
+            alert('No investment assets with price URLs found. Add CafeF URL (stocks) or select city (gold) to enable auto-updates.');
+            setIsUpdatingPrices(false);
+            return;
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        // Update stocks
+        for (const stock of stocksToUpdate) {
+            try {
+                const priceData = await stockPriceService.fetchPrice(stock.cafefUrl!, stock.name);
+
+                const updatedAsset: Asset = {
+                    ...stock,
+                    pricePerUnit: priceData.price,
+                    value: stock.quantity ? stock.quantity * priceData.price : priceData.price,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                updateAsset(updatedAsset);
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to update ${stock.name}:`, error);
+                failCount++;
+            }
+        }
+
+        // Update gold
+        for (const gold of goldToUpdate) {
+            try {
+                const priceData = await goldPriceService.fetchPrice(
+                    gold.name,
+                    gold.goldCity || 'Hà Nội',
+                    'doji' // Hard-coded to DOJI
+                );
+
+                // Use BUY price for asset valuation (what shop pays YOU when selling back)
+                const pricePerLuong = priceData.buyPrice; // triệu/lượng
+                const pricePerChi = pricePerLuong / 10; // triệu/chỉ (1 lượng = 10 chỉ)
+
+                // Convert from triệu to VND for display (formatter expects VND)
+                const pricePerChiVND = pricePerChi * 1_000_000; // VND/chỉ
+
+                const updatedAsset: Asset = {
+                    ...gold,
+                    pricePerUnit: pricePerChiVND, // Store as VND per chỉ
+                    value: gold.quantity ? gold.quantity * pricePerChiVND : pricePerChiVND,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                updateAsset(updatedAsset);
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to update ${gold.name}:`, error);
+                failCount++;
+            }
+        }
+
+        setIsUpdatingPrices(false);
+
+        const stockMsg = stocksToUpdate.length > 0 ? `${stocksToUpdate.length} stock(s)` : '';
+        const goldMsg = goldToUpdate.length > 0 ? `${goldToUpdate.length} gold product(s)` : '';
+        const assetsMsg = [stockMsg, goldMsg].filter(m => m).join(' and ');
+
+        alert(`Updated ${successCount} of ${stocksToUpdate.length + goldToUpdate.length} investments (${assetsMsg}). ${failCount > 0 ? `Failed: ${failCount}` : ''}`);
+    };
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'Stock': return TrendingUp;
@@ -83,26 +165,36 @@ export function InvestmentsPage() {
     };
 
     return (
-        <div className="p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{t.investments.title}</h2>
                     <p className="text-muted-foreground mt-2">{t.investments.subtitle}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <a
                         href="https://banggia.dnse.com.vn/vn30"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md border bg-background hover:bg-muted text-foreground transition-all"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border bg-background hover:bg-muted text-foreground transition-all"
+                        title={t.investments.marketData}
                     >
                         <ExternalLink className="h-4 w-4 text-blue-600" />
                         <span className="hidden sm:inline">{t.investments.marketData}</span>
                     </a>
                     <button
+                        onClick={handleUpdatePrices}
+                        disabled={isUpdatingPrices}
+                        className="flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all shadow-sm"
+                        title="Update Portfolio Value"
+                    >
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="hidden sm:inline">{isUpdatingPrices ? 'Updating...' : 'Update Prices'}</span>
+                    </button>
+                    <button
                         onClick={handleAddAsset}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm"
                     >
                         <Plus className="h-4 w-4" />
                         <span>{t.assets.addAsset}</span>
@@ -111,35 +203,35 @@ export function InvestmentsPage() {
             </div>
 
             {/* Performance Overview */}
-            <div className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-xl border bg-card p-5 shadow-sm">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+                <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.investments.totalValue}</p>
-                    <h3 className="text-2xl font-bold mt-2">{formatter.format(currentPortfolioValue)}</h3>
+                    <h3 className="text-lg md:text-2xl font-bold mt-2 truncate">{formatter.format(currentPortfolioValue)}</h3>
                 </div>
-                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.investments.netInvested}</p>
-                    <h3 className="text-2xl font-bold mt-2 text-blue-600">{formatter.format(netInvestedCapital)}</h3>
+                    <h3 className="text-lg md:text-2xl font-bold mt-2 text-blue-600 truncate">{formatter.format(netInvestedCapital)}</h3>
                 </div>
-                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.investments.profitLoss}</p>
                     <div className={`flex items-center gap-2 mt-2 ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        <h3 className="text-2xl font-bold">{formatter.format(profit)}</h3>
-                        {profit >= 0 ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
+                        <h3 className="text-lg md:text-2xl font-bold truncate">{formatter.format(profit)}</h3>
+                        {profit >= 0 ? <ArrowUpRight className="h-4 w-4 md:h-5 md:w-5" /> : <ArrowDownRight className="h-4 w-4 md:h-5 md:w-5" />}
                     </div>
                 </div>
-                <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t.investments.growthRate}</p>
                     <div className={`flex items-center gap-2 mt-2 ${growthRate >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        <h3 className="text-2xl font-bold">{growthRate.toFixed(2)}%</h3>
+                        <h3 className="text-lg md:text-2xl font-bold">{growthRate.toFixed(2)}%</h3>
                     </div>
                 </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
                 {/* Allocation Chart (2/3 width) */}
-                <div className="md:col-span-2 rounded-xl border bg-card p-6 shadow-sm">
+                <div className="md:col-span-2 rounded-xl border bg-card p-4 md:p-6 shadow-sm">
                     <h3 className="font-semibold mb-4">{t.investments.allocation}</h3>
-                    <div className="h-[350px]">
+                    <div className="h-[300px] md:h-[350px]">
                         <AssetAllocationChart mode="details" activeTab="investment" />
                     </div>
                 </div>
@@ -220,7 +312,7 @@ export function InvestmentsPage() {
 
             {/* Holdings List */}
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-                <div className="p-6 border-b flex items-center justify-between">
+                <div className="p-4 md:p-6 border-b flex items-center justify-between">
                     <h3 className="font-semibold text-lg">{t.investments.currentHoldings}</h3>
                     <span className="text-xs text-muted-foreground">{investmentAssets.length} assets</span>
                 </div>
@@ -233,13 +325,13 @@ export function InvestmentsPage() {
                         investmentAssets.map(asset => {
                             const Icon = getIcon(asset.type);
                             return (
-                                <div key={asset.id} className="group p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                                    <div className="flex items-center gap-4 cursor-pointer" onClick={() => handleEditAsset(asset)}>
-                                        <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2.5 text-blue-600 dark:text-blue-400">
+                                <div key={asset.id} className="group p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+                                    <div className="flex items-center gap-4 cursor-pointer min-w-0" onClick={() => handleEditAsset(asset)}>
+                                        <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2.5 text-blue-600 dark:text-blue-400 shrink-0">
                                             <Icon className="h-5 w-5" />
                                         </div>
-                                        <div>
-                                            <h4 className="font-semibold">{asset.name}</h4>
+                                        <div className="min-w-0">
+                                            <h4 className="font-semibold truncate">{asset.name}</h4>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <span className="capitalize">{asset.type}</span>
                                                 {asset.quantity && asset.pricePerUnit && (
@@ -251,7 +343,7 @@ export function InvestmentsPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-6">
+                                    <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pl-14 sm:pl-0">
                                         <div className="text-right">
                                             <div className="font-bold text-foreground">
                                                 {formatter.format(asset.value)}
@@ -260,7 +352,7 @@ export function InvestmentsPage() {
                                                 {((asset.value / currentPortfolioValue) * 100).toFixed(1)}% of portfolio
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => handleEditAsset(asset)}
                                                 className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-background border border-transparent hover:border-border transition-all"
